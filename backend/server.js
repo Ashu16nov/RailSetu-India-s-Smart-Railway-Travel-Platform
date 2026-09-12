@@ -19,11 +19,13 @@ const authRoutes = require('./routes/authRoutes');
 const passengerRoutes = require('./routes/passengerRoutes');
 const trainRoutes = require('./routes/trainRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/passengers', passengerRoutes);
 app.use('/api/trains', trainRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/services', serviceRoutes);
 
 app.get('/', (req, res) => {
   res.send('RailSetu API is running...');

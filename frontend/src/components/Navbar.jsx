@@ -1,8 +1,9 @@
 import React from 'react';
+import { Layout, Menu, Button, Avatar, Dropdown } from 'antd';
+import { UserOutlined, DownOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layout, Menu, Button } from 'antd';
-import { Train, User } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
+import { Train, Activity, Compass, Utensils, AlertTriangle } from 'lucide-react';
 
 const { Header } = Layout;
 
@@ -14,6 +15,13 @@ const Navbar = () => {
     logout();
     navigate('/');
   };
+
+  const serviceMenuItems = [
+    { key: 'pnr', icon: <Activity size={16}/>, label: <Link to="/pnr">PNR Status</Link> },
+    { key: 'track', icon: <Compass size={16}/>, label: <Link to="/track">Track Train</Link> },
+    { key: 'food', icon: <Utensils size={16}/>, label: <Link to="/food">E-Catering</Link> },
+    { key: 'madad', icon: <AlertTriangle size={16}/>, label: <Link to="/madad">Rail Madad</Link> },
+  ];
 
   return (
     <Header style={{ 
@@ -27,11 +35,19 @@ const Navbar = () => {
       top: 0,
       zIndex: 1000
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <Train color="#FB792B" size={36} style={{ filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.2))' }} />
-        <Link to="/" style={{ color: 'white', fontSize: '1.8rem', fontWeight: '800', letterSpacing: '1px' }}>
-          Rail<span style={{ color: '#FB792B' }}>Setu</span>
-        </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <Train color="#FB792B" size={36} style={{ filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.2))' }} />
+          <Link to="/" style={{ color: 'white', fontSize: '1.8rem', fontWeight: '800', letterSpacing: '1px' }}>
+            Rail<span style={{ color: '#FB792B' }}>Setu</span>
+          </Link>
+        </div>
+        
+        <Dropdown menu={{ items: serviceMenuItems }} placement="bottomLeft">
+          <Button type="text" style={{ color: 'white', fontSize: '1rem', fontWeight: 'bold' }}>
+            Services <DownOutlined style={{ fontSize: '12px' }} />
+          </Button>
+        </Dropdown>
       </div>
       <Menu mode="horizontal" selectable={false} style={{ flex: 1, justifyContent: 'flex-end', borderBottom: 'none', background: 'transparent' }}>
         {user ? (

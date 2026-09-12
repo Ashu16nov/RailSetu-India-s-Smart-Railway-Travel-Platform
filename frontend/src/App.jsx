@@ -7,6 +7,10 @@ import Profile from './pages/Profile';
 import Home from './pages/Home';
 import Booking from './pages/Booking';
 import MyBookings from './pages/MyBookings';
+import PNRStatus from './pages/PNRStatus';
+import TrackTrain from './pages/TrackTrain';
+import FoodBooking from './pages/FoodBooking';
+import RailMadad from './pages/RailMadad';
 
 function App() {
   return (
@@ -20,6 +24,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/pnr" element={<PNRStatus />} />
+          <Route path="/track" element={<TrackTrain />} />
+          <Route path="/food" element={<FoodBooking />} />
+          <Route path="/madad" element={<RailMadad />} />
         </Routes>
       </div>
     </Router>
