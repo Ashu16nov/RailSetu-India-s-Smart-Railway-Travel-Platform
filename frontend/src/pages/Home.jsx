@@ -1,363 +1,443 @@
-import React, { useState } from 'react';
-import { Card, Form, Select, Button, DatePicker, Typography, Space, Row, Col, Tag, Divider, Modal, Timeline } from 'antd';
-import { Search, MapPin, Calendar, CreditCard, Clock, CalendarDays, Activity, Compass, Utensils, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
-import axios from 'axios';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Typography, Tabs, Input, Select, DatePicker, Checkbox, Button, Divider, Modal, Form, message, Tag } from 'antd';
+import { SwapOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Train, Calendar, Info, MapPin, Coffee, HelpCircle, Shield, Umbrella, Ticket, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import useBookingStore from '../store/useBookingStore';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
+const { TabPane } = Tabs;
 
-const STATION_LIST = [
-  { code: 'MMCT', name: 'Mumbai Central' },
-  { code: 'NDLS', name: 'New Delhi' },
-  { code: 'ADI', name: 'Ahmedabad Jn' },
-  { code: 'MAS', name: 'Chennai Central' },
-  { code: 'BZA', name: 'Vijayawada Jn' },
-  { code: 'NZM', name: 'Hazrat Nizamuddin' },
-  { code: 'ST', name: 'Surat' },
-  { code: 'BRC', name: 'Vadodara Jn' },
-  { code: 'HWH', name: 'Howrah Jn' },
-  { code: 'PUNE', name: 'Pune Jn' },
-  { code: 'SBC', name: 'KSR Bengaluru' },
-  { code: 'CSMT', name: 'Chhatrapati Shivaji Maharaj Terminus' },
-  { code: 'PNBE', name: 'Patna Jn' },
-  { code: 'LKO', name: 'Lucknow Charbagh' },
-  { code: 'CNB', name: 'Kanpur Central' },
-  { code: 'JP', name: 'Jaipur Jn' }
-];
+const ArrowRight = ({ size, color }) => <span style={{ color, fontSize: size }}>&rarr;</span>;
 
 const Home = () => {
-  const [trains, setTrains] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [searchParams, setSearchParams] = useState(null);
-  const [routeModalVisible, setRouteModalVisible] = useState(false);
-  const [selectedTrainRoute, setSelectedTrainRoute] = useState(null);
   const navigate = useNavigate();
+  const bookings = useBookingStore(state => state.bookings);
+  const addBooking = useBookingStore(state => state.addBooking);
+  const fetchBookings = useBookingStore(state => state.fetchBookings);
 
-  const onSearch = async (values) => {
-    setLoading(true);
-    setSearched(true);
-    try {
-      // Pass the selected date so we can display it later
-      const { data } = await axios.get(`http://localhost:5000/api/trains/search?from=${values.from}&to=${values.to}&date=${values.date.format('YYYY-MM-DD')}`);
-      setTrains(data);
-      setSearchParams({ ...values, dateObj: values.date });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const [fromStation, setFromStation] = useState('');
+  const [toStation, setToStation] = useState('');
+  const [journeyDate, setJourneyDate] = useState(null);
+  const [travelClass, setTravelClass] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableTrains, setAvailableTrains] = useState([]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const handleSearchTrains = (source = fromStation, dest = toStation) => {
+    const src = source || 'New Delhi (NDLS)';
+    const dst = dest || 'Varanasi (BSB)';
+    
+    // Mock available trains matching search
+    setAvailableTrains([
+      { id: '1', trainName: 'Rajdhani Express', trainNumber: '12951', source: src, destination: dst, departureTime: '16:45', arrivalTime: '01:00', duration: '8h 15m', fare: 1450, class: '3AC' },
+      { id: '2', trainName: 'Vande Bharat Express', trainNumber: '20685', source: src, destination: dst, departureTime: '06:00', arrivalTime: '14:00', duration: '8h 00m', fare: 1850, class: 'CC' },
+      { id: '3', trainName: 'Shatabdi Express', trainNumber: '12002', source: src, destination: dst, departureTime: '07:20', arrivalTime: '13:40', duration: '6h 20m', fare: 1210, class: '2AC' }
+    ]);
+    setIsModalOpen(true);
   };
 
-  const calculateDuration = (depTime, arrTime, depDay, arrDay) => {
-    if (!depTime || !arrTime) return '--';
-    const [depH, depM] = depTime.split(':').map(Number);
-    const [arrH, arrM] = arrTime.split(':').map(Number);
-    
-    let totalMins = ((arrDay - depDay) * 24 * 60) + (arrH * 60 + arrM) - (depH * 60 + depM);
-    if (totalMins < 0) totalMins += 24 * 60; // Just in case it wraps around midnight incorrectly without day increment
-    
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return `${h}h ${m}m`;
+  const handleConfirmBooking = (train) => {
+    const newBooking = addBooking({
+      trainName: train.trainName,
+      trainNumber: train.trainNumber,
+      source: train.source,
+      destination: train.destination,
+      journeyDate: journeyDate ? journeyDate.format('DD MMM YYYY') : '18 Sep 2026',
+      journeyTime: train.departureTime,
+      className: train.class,
+      totalFare: train.fare
+    });
+
+    message.success(`Ticket Booked Successfully! PNR: ${newBooking.pnr}`);
+    setIsModalOpen(false);
   };
 
-  const renderTrainCard = (train) => {
-    const dep = train.route.find(r => r.stationCode === searchParams?.from);
-    const arr = train.route.find(r => r.stationCode === searchParams?.to);
-    
-    // Calculate display dates based on user search date
-    let depDateStr = '';
-    let arrDateStr = '';
-    if (searchParams?.dateObj && dep && arr) {
-       // Since users are searching from origin, we assume the journey starts on their searched date
-       const baseDate = searchParams.dateObj;
-       depDateStr = baseDate.add(dep.day - 1, 'day').format('DD MMM, ddd');
-       arrDateStr = baseDate.add(arr.day - 1, 'day').format('DD MMM, ddd');
-    }
-    
-    const duration = calculateDuration(dep?.departureTime, arr?.arrivalTime, dep?.day || 1, arr?.day || 1);
-    
-    return (
-      <Card 
-        key={train._id} 
-        style={{ marginBottom: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid #f0f0f0' }}
-        bodyStyle={{ padding: '0' }}
-      >
-        <div style={{ backgroundColor: '#f7f9fa', padding: '12px 24px', borderTopLeftRadius: '12px', borderTopRightRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
-          <div>
-            <Title level={4} style={{ margin: 0, color: '#213d77' }}>{train.name} <Text type="secondary" style={{ fontSize: '1rem', fontWeight: 'normal' }}>({train.trainNumber})</Text></Title>
-          </div>
-          <div>
-             <Text type="secondary" style={{ fontSize: '13px' }}><Clock size={14} style={{verticalAlign: 'middle', marginRight: 4}}/> Runs On: <Text strong>{train.runsOn.join(', ')}</Text></Text>
-          </div>
-        </div>
-        
-        <div style={{ padding: '24px' }}>
-          <Row align="middle" gutter={32}>
-            {/* Timing Section */}
-            <Col xs={24} md={8}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Title level={3} style={{ margin: 0, color: '#333' }}>{dep?.departureTime}</Title>
-                  <Text type="secondary" style={{ display: 'block', marginBottom: '4px' }}>{dep?.stationName} ({dep?.stationCode})</Text>
-                  <Text type="secondary" strong style={{ fontSize: '12px', color: '#666' }}><CalendarDays size={12} style={{verticalAlign:'middle'}}/> {depDateStr}</Text>
-                </div>
-                <div style={{ flex: 1, padding: '0 16px', textAlign: 'center' }}>
-                  <Text type="secondary" strong style={{ fontSize: '13px', color: '#0052cc' }}>{duration}</Text>
-                  <Divider style={{ margin: '4px 0', borderColor: '#d9d9d9', borderStyle: 'dashed' }} />
-                  <Button 
-                    type="link" 
-                    size="small" 
-                    style={{ fontSize: '12px', padding: 0, height: 'auto', color: '#888' }}
-                    onClick={() => {
-                      setSelectedTrainRoute(train);
-                      setRouteModalVisible(true);
-                    }}
-                  >
-                    View Route
-                  </Button>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <Title level={3} style={{ margin: 0, color: '#1e293b' }}>{arr?.arrivalTime}</Title>
-                  <Text type="secondary" style={{ display: 'block', marginBottom: '4px' }}>{arr?.stationName} ({arr?.stationCode})</Text>
-                  <Text type="secondary" strong style={{ fontSize: '12px', color: '#666' }}><CalendarDays size={12} style={{verticalAlign:'middle'}}/> {arrDateStr}</Text>
-                </div>
-              </div>
-            </Col>
-            
-            {/* Availability Section */}
-            <Col xs={24} md={16} style={{ borderLeft: '1px solid #f0f0f0' }}>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-                {train.classes.map(c => (
-                  <Card 
-                    key={c.className} 
-                    hoverable
-                    onClick={() => navigate(`/book/${train._id}`, { state: { train, searchParams, selectedClass: c } })}
-                    style={{ 
-                      minWidth: '130px', 
-                      borderRadius: '8px', 
-                      borderColor: '#e8e8e8',
-                      flexShrink: 0,
-                      cursor: 'pointer'
-                    }}
-                    bodyStyle={{ padding: '12px', textAlign: 'center' }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <Text strong style={{ fontSize: '16px', color: '#213d77' }}>{c.className}</Text>
-                      <Text strong style={{ color: '#FB792B' }}>₹{c.fare}</Text>
-                    </div>
-                    <div style={{ textAlign: 'left' }}>
-                      <Text type="success" strong style={{ fontSize: '13px' }}>AVAILABLE - {c.totalSeats}</Text>
-                    </div>
-                    <Button type="primary" size="small" style={{ width: '100%', marginTop: '12px', borderRadius: '4px' }}>Book Now</Button>
-                  </Card>
-                ))}
-              </div>
-            </Col>
-          </Row>
-        </div>
-      </Card>
-    );
-  };
+  const upcoming = bookings.find(b => b.status === 'CONFIRMED') || bookings[0];
 
   return (
-    <div>
-      {/* Banner Section */}
-      <div style={{
-        position: 'relative',
-        background: 'url("https://images.unsplash.com/photo-1532105956626-9569c03602f6?q=80&w=1200&auto=format&fit=crop") no-repeat center center',
-        backgroundSize: 'cover',
-        padding: '60px 40px',
-        minHeight: '400px',
-        display: 'flex',
-        alignItems: 'center'
-      }}>
-        {/* Dark overlay for readability */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}></div>
-        
-        <Card style={{ 
-          width: 450, 
-          borderRadius: 12, 
-          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          zIndex: 1,
-          border: 'none',
-          overflow: 'hidden'
-        }}
-        bodyStyle={{ padding: 0 }}
-        >
-          <div style={{ background: '#213d77', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-             <CreditCard color="#fff" />
-             <Title level={4} style={{ color: '#fff', margin: 0 }}>BOOK TICKET</Title>
-          </div>
-          <div style={{ padding: '24px' }}>
-            <Form layout="vertical" size="large" onFinish={onSearch}>
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="from" rules={[{ required: true, message: 'Source required' }]}>
-                    <Select
-                      showSearch
-                      size="large"
-                      placeholder={<div><MapPin size={18} color="#bfbfbf" style={{marginRight: 8, verticalAlign: 'middle'}}/> From Station</div>}
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={STATION_LIST.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item name="to" rules={[{ required: true, message: 'Destination required' }]}>
-                    <Select
-                      showSearch
-                      size="large"
-                      placeholder={<div><MapPin size={18} color="#bfbfbf" style={{marginRight: 8, verticalAlign: 'middle'}}/> To Station</div>}
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={STATION_LIST.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item name="date" rules={[{ required: true, message: 'Date required' }]}>
-                    <DatePicker style={{ width: '100%' }} prefix={<Calendar size={18} color="#bfbfbf" />} placeholder="DD/MM/YYYY" />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Button type="primary" htmlType="submit" size="large" block style={{ fontWeight: 'bold', height: '48px', fontSize: '1.1rem' }} loading={loading}>
-                    Search Trains
-                  </Button>
-                </Col>
-              </Row>
-            </Form>
-          </div>
-        </Card>
-      </div>
-
-      {/* Search Results Section */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 20px' }}>
-        {searched && (
-          <div>
-            <Title level={3} style={{ color: '#213d77', marginBottom: '24px' }}>
-              Train Availability ({trains.length} found)
-            </Title>
+    <div style={{ paddingBottom: '40px' }}>
+      <Row gutter={[24, 24]}>
+        {/* Left Column (Main Content) */}
+        <Col xs={24} lg={16} xl={17}>
+          
+          {/* Hero Banner */}
+          <div style={{
+            height: '240px',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            position: 'relative',
+            marginBottom: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}>
+            <img 
+              src="https://images.unsplash.com/photo-1541427468627-a89a96e5ca1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+              alt="Train Landscape"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,35,75,0.9))' }}></div>
             
-            {trains.length > 0 ? (
-              trains.map(train => renderTrainCard(train))
-            ) : (
-              <Card style={{ textAlign: 'center', padding: '40px' }}>
-                <Text type="secondary" style={{ fontSize: '1.2rem' }}>No trains found for this route.</Text>
-              </Card>
-            )}
+            <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 40px', alignItems: 'flex-end', textAlign: 'right' }}>
+              <Title level={1} style={{ color: '#fff', margin: 0, fontSize: '2.5rem', fontWeight: '800' }}>
+                Explore India
+              </Title>
+              <Title level={2} style={{ color: '#FDB813', marginTop: '-5px', marginBottom: '15px', fontSize: '2rem', fontWeight: '800' }}>
+                By Rail
+              </Title>
+              <Text style={{ color: '#e6f7ff', fontSize: '1rem', marginBottom: '20px', fontWeight: '500' }}>
+                Comfortable &bull; Safe &bull; On Time
+              </Text>
+              <Button type="default" onClick={() => handleSearchTrains()} style={{ borderRadius: '24px', padding: '0 24px', height: '40px', fontWeight: '600', color: '#00234b', border: 'none' }}>
+                Book Your Journey &rarr;
+              </Button>
+            </div>
           </div>
-        )}
 
-        {!searched && (
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Title level={2} style={{ color: '#1e293b' }}>Plan Your Perfect Journey</Title>
-            <Text type="secondary" style={{ fontSize: '1.1rem' }}>Search across 1000+ routes with real-time tracking.</Text>
+          {/* Booking Widget */}
+          <Card 
+            bordered={false} 
+            style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}
+            bodyStyle={{ padding: '0' }}
+          >
+            <Tabs defaultActiveKey="1" centered size="large" tabBarGutter={60} style={{ padding: '10px 24px 0' }}>
+              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><Train size={18}/> Book Ticket</span>} key="1">
+                <div style={{ padding: '10px 24px 30px' }}>
+                  <Row gutter={16} align="middle">
+                    <Col span={9}>
+                      <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>From</Text></div>
+                      <Input 
+                        size="large" 
+                        value={fromStation}
+                        onChange={(e) => setFromStation(e.target.value)}
+                        prefix={<MapPin size={16} color="#bfbfbf" style={{ marginRight: '8px' }}/>} 
+                        placeholder="Enter departure station" 
+                        style={{ borderRadius: '8px' }} 
+                      />
+                    </Col>
+                    <Col span={2} style={{ display: 'flex', justifyContent: 'center', marginTop: '25px' }}>
+                      <div 
+                        onClick={() => { const temp = fromStation; setFromStation(toStation); setToStation(temp); }}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f0f5ff', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#1890ff' }}
+                      >
+                        <SwapOutlined />
+                      </div>
+                    </Col>
+                    <Col span={13}>
+                      <Row gutter={16}>
+                        <Col span={9}>
+                          <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>To</Text></div>
+                          <Input 
+                            size="large" 
+                            value={toStation}
+                            onChange={(e) => setToStation(e.target.value)}
+                            prefix={<MapPin size={16} color="#bfbfbf" style={{ marginRight: '8px' }}/>} 
+                            placeholder="Enter destination station" 
+                            style={{ borderRadius: '8px' }} 
+                          />
+                        </Col>
+                        <Col span={8}>
+                          <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>Journey Date</Text></div>
+                          <DatePicker 
+                            size="large" 
+                            onChange={(d) => setJourneyDate(d)}
+                            style={{ width: '100%', borderRadius: '8px' }} 
+                          />
+                        </Col>
+                        <Col span={7}>
+                          <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>Class</Text></div>
+                          <Select 
+                            size="large" 
+                            value={travelClass}
+                            onChange={(v) => setTravelClass(v)}
+                            style={{ width: '100%' }} 
+                            options={[
+                              {value: 'all', label: 'All Classes'},
+                              {value: '1AC', label: 'AC First Class (1A)'},
+                              {value: '2AC', label: 'AC 2 Tier (2A)'},
+                              {value: '3AC', label: 'AC 3 Tier (3A)'},
+                              {value: 'SL', label: 'Sleeper (SL)'}
+                            ]} 
+                          />
+                        </Col>
+                      </Row>
+                    </Col>
+                  </Row>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
+                    <Checkbox style={{ color: '#595959' }}>Show only available trains</Checkbox>
+                    <Button 
+                      type="primary" 
+                      size="large" 
+                      onClick={() => handleSearchTrains()}
+                      icon={<SearchOutlined />} 
+                      style={{ borderRadius: '8px', padding: '0 30px', fontWeight: '600', backgroundColor: '#1890ff' }}
+                    >
+                      Search Trains
+                    </Button>
+                  </div>
+                </div>
+              </TabPane>
+              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#8c8c8c' }}><Info size={18}/> Check PNR</span>} key="2" />
+              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#8c8c8c' }}><Calendar size={18}/> Live Train Status</span>} key="3" />
+            </Tabs>
+          </Card>
+
+          {/* Popular Routes */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
+            <Title level={4} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Popular Routes</Title>
+            <Button type="link" style={{ padding: 0, fontWeight: '600' }}>View All &rarr;</Button>
           </div>
-        )}
-      </div>
-
-      {/* Services Grid Section */}
-      <div style={{ background: '#fff', padding: '60px 20px', borderTop: '1px solid #f0f0f0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Title level={2} style={{ color: '#1e293b', textAlign: 'center', marginBottom: '40px' }}>RailSetu Super Services</Title>
-          <Row gutter={[24, 24]}>
-            <Col xs={12} md={6}>
-              <Card hoverable onClick={() => navigate('/pnr')} style={{ textAlign: 'center', borderRadius: '12px', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-                <Activity size={48} color="#0052cc" style={{ marginBottom: '16px' }} />
-                <Title level={4} style={{ color: '#1e293b' }}>PNR Status</Title>
-                <Text type="secondary">Check your ticket confirmation</Text>
-              </Card>
-            </Col>
-            <Col xs={12} md={6}>
-              <Card hoverable onClick={() => navigate('/track')} style={{ textAlign: 'center', borderRadius: '12px', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-                <Compass size={48} color="#FB792B" style={{ marginBottom: '16px' }} />
-                <Title level={4} style={{ color: '#1e293b' }}>Live Tracking</Title>
-                <Text type="secondary">Find where your train is</Text>
-              </Card>
-            </Col>
-            <Col xs={12} md={6}>
-              <Card hoverable onClick={() => navigate('/food')} style={{ textAlign: 'center', borderRadius: '12px', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-                <Utensils size={48} color="#00a854" style={{ marginBottom: '16px' }} />
-                <Title level={4} style={{ color: '#1e293b' }}>E-Catering</Title>
-                <Text type="secondary">Order food to your seat</Text>
-              </Card>
-            </Col>
-            <Col xs={12} md={6}>
-              <Card hoverable onClick={() => navigate('/madad')} style={{ textAlign: 'center', borderRadius: '12px', border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-                <AlertTriangle size={48} color="#f04134" style={{ marginBottom: '16px' }} />
-                <Title level={4} style={{ color: '#1e293b' }}>Rail Madad</Title>
-                <Text type="secondary">Grievance & Medical help</Text>
-              </Card>
-            </Col>
+          
+          <Row gutter={16} style={{ marginBottom: '24px' }}>
+            {[
+              { img: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80', title: 'New Delhi (NDLS)', dest: 'Varanasi (BSB)', time: '8h 15m', trains: 5, price: '455' },
+              { img: 'https://images.unsplash.com/photo-1566552881560-0be862a7c445?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80', title: 'Mumbai (CSMT)', dest: 'Pune (PUNE)', time: '3h 10m', trains: 12, price: '210' },
+              { img: 'https://images.unsplash.com/photo-1558431382-27e303142255?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80', title: 'Kolkata (KOAA)', dest: 'Howrah (HWH)', time: '1h 20m', trains: 8, price: '120' },
+              { img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f7415e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80', title: 'Chennai (MAS)', dest: 'Bengaluru (SBC)', time: '5h 45m', trains: 10, price: '315' }
+            ].map((route, i) => (
+              <Col span={6} key={i}>
+                <Card 
+                  hoverable
+                  onClick={() => handleSearchTrains(route.title, route.dest)}
+                  bodyStyle={{ padding: '12px' }}
+                  cover={<img alt={route.title} src={route.img} style={{ height: '100px', objectFit: 'cover', borderRadius: '12px 12px 0 0' }} />}
+                  style={{ borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f0f0f0' }}
+                >
+                  <Text style={{ fontSize: '0.7rem', color: '#8c8c8c', display: 'block', marginBottom: '2px' }}>{route.title}</Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                    <ArrowRight size={12} color="#1890ff" />
+                    <Text style={{ fontWeight: '700', fontSize: '0.85rem', color: '#262626' }}>{route.dest}</Text>
+                  </div>
+                  <Text style={{ fontSize: '0.7rem', color: '#8c8c8c', display: 'block', marginBottom: '12px' }}>{route.time} &bull; {route.trains} Trains</Text>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: '0.75rem', color: '#595959' }}>From <span style={{ fontWeight: '700', color: '#1890ff' }}>₹ {route.price}</span></Text>
+                    <ArrowRight size={14} color="#8c8c8c" />
+                  </div>
+                </Card>
+              </Col>
+            ))}
           </Row>
-        </div>
-      </div>
 
-      {/* Why Choose Us Section */}
-      <div style={{ background: '#f7f9fa', padding: '60px 20px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <Title level={2} style={{ color: '#1e293b', marginBottom: '40px' }}>Why Choose RailSetu?</Title>
-          <Row gutter={[32, 32]}>
-            <Col xs={24} md={8}>
-              <ShieldCheck size={40} color="#0052cc" style={{ marginBottom: '16px' }} />
-              <Title level={4}>Secure Bookings</Title>
-              <Text type="secondary">Verified Aadhaar authentication ensuring zero fraud and genuine passenger travel.</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <Zap size={40} color="#FB792B" style={{ marginBottom: '16px' }} />
-              <Title level={4}>Lightning Fast</Title>
-              <Text type="secondary">Experience India's fastest train search engine powered by robust caching.</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <CreditCard size={40} color="#00a854" style={{ marginBottom: '16px' }} />
-              <Title level={4}>Instant Refunds</Title>
-              <Text type="secondary">Seamless cancellation with automated instant refunds straight to your R-Wallet.</Text>
-            </Col>
-          </Row>
-        </div>
-      </div>
-
-      {/* Route Modal */}
-      <Modal
-        title={
-          <div style={{ paddingBottom: '10px', borderBottom: '1px solid #f0f0f0' }}>
-            <Title level={4} style={{ margin: 0, color: '#1e293b' }}>{selectedTrainRoute?.name}</Title>
-            <Text type="secondary">Train No: {selectedTrainRoute?.trainNumber}</Text>
-          </div>
-        }
-        visible={routeModalVisible}
-        onCancel={() => setRouteModalVisible(false)}
-        footer={null}
-        bodyStyle={{ paddingTop: '24px' }}
-      >
-        <Timeline
-          items={selectedTrainRoute?.route?.sort((a, b) => a.distance - b.distance).map((stop, index) => ({
-            color: index === 0 ? 'green' : index === selectedTrainRoute.route.length - 1 ? 'red' : 'blue',
-            children: (
-              <div>
-                <Text strong style={{ fontSize: '16px' }}>{stop.stationName} ({stop.stationCode})</Text>
-                <br />
-                <Text type="secondary">
-                  Arrives: <b>{stop.arrivalTime}</b> | Departs: <b>{stop.departureTime}</b>
-                </Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>Day {stop.day} | Distance: {stop.distance} km</Text>
+          {/* Bottom Promo */}
+          <div style={{ backgroundColor: '#e6f0ff', borderRadius: '16px', padding: '20px 30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ background: '#1890ff', borderRadius: '12px', padding: '12px', color: '#fff', transform: 'rotate(-10deg)' }}>
+                <Train size={24} />
               </div>
-            )
-          }))}
-        />
+              <div>
+                <Title level={4} style={{ margin: 0, color: '#00234b', fontWeight: '700' }}>Plan Your Next Trip</Title>
+                <Text style={{ color: '#595959' }}>Discover new places, book tickets, and make unforgettable memories with RailSetu.</Text>
+              </div>
+            </div>
+            <Button type="primary" onClick={() => handleSearchTrains()} style={{ borderRadius: '8px', fontWeight: '600', padding: '0 20px' }}>Explore Now &rarr;</Button>
+          </div>
+        </Col>
+
+        {/* Right Column */}
+        <Col xs={24} lg={8} xl={7}>
+
+          {/* Upcoming Journey Section (Dynamic) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+            <Title level={5} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Upcoming Journey</Title>
+            {upcoming && <Button type="link" style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>View Details &rarr;</Button>}
+          </div>
+
+          {upcoming ? (
+            <Card style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px', border: 'none' }} bodyStyle={{ padding: '20px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ background: '#f0f5ff', padding: '10px', borderRadius: '12px', color: '#1890ff' }}>
+                  <Train size={24} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', color: '#262626', fontSize: '1rem', display: 'block', marginBottom: '4px' }}>
+                    {upcoming.trainName} ({upcoming.trainNumber})
+                  </Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#595959', fontSize: '0.8rem', marginBottom: '4px' }}>
+                    <Text style={{ color: '#595959', fontSize: '0.8rem' }}>{upcoming.source}</Text>
+                    <ArrowRight size={12} color="#bfbfbf" />
+                    <Text style={{ color: '#595959', fontSize: '0.8rem' }}>{upcoming.destination}</Text>
+                  </div>
+                  <Text style={{ color: '#8c8c8c', fontSize: '0.75rem' }}>{upcoming.journeyDate} &bull; {upcoming.journeyTime}</Text>
+                </div>
+              </div>
+              <Divider style={{ margin: '16px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <Text style={{ color: '#8c8c8c', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Coach</Text>
+                  <Text style={{ fontWeight: '700', color: '#262626' }}>{upcoming.coach || 'B3'}</Text>
+                </div>
+                <div>
+                  <Text style={{ color: '#8c8c8c', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Berth</Text>
+                  <Text style={{ fontWeight: '700', color: '#262626' }}>{upcoming.berth || '36'}</Text>
+                </div>
+                <div>
+                  <Text style={{ color: '#8c8c8c', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Status</Text>
+                  <Text style={{ fontWeight: '700', color: '#52c41a' }}>{upcoming.status || 'Confirmed'}</Text>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <Card style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px', border: '1px dashed #d9d9d9', textAlign: 'center', backgroundColor: '#fafafa' }} bodyStyle={{ padding: '24px 20px' }}>
+              <div style={{ background: '#f5f5f5', borderRadius: '50%', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#bfbfbf' }}>
+                <Train size={24} />
+              </div>
+              <Text style={{ display: 'block', color: '#262626', fontWeight: '600', fontSize: '0.95rem', marginBottom: '4px' }}>
+                No Upcoming Journey
+              </Text>
+              <Text style={{ display: 'block', color: '#8c8c8c', fontSize: '0.8rem', marginBottom: '16px' }}>
+                Book a train ticket to view your active reservation details here.
+              </Text>
+              <Button 
+                type="primary" 
+                onClick={() => handleSearchTrains()}
+                style={{ borderRadius: '8px', background: '#1890ff', fontWeight: '600' }}
+              >
+                Book a Ticket
+              </Button>
+            </Card>
+          )}
+
+          {/* Recent Bookings Section (Dynamic) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+            <Title level={5} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Recent Bookings</Title>
+            {bookings.length > 0 && <Button type="link" style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>View All &rarr;</Button>}
+          </div>
+
+          {bookings.length > 0 ? (
+            <Card style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px', border: 'none' }} bodyStyle={{ padding: '0' }}>
+              {bookings.slice(0, 3).map((item, i) => (
+                <div key={item._id || i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: i < Math.min(bookings.length, 3) - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                  <div style={{ background: '#f0f5ff', padding: '8px', borderRadius: '8px', color: '#1890ff' }}>
+                    <Train size={16} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: '600', color: '#262626', fontSize: '0.85rem', display: 'block' }}>
+                      {item.trainName} ({item.trainNumber})
+                    </Text>
+                    <Text style={{ color: '#8c8c8c', fontSize: '0.75rem' }}>
+                      {item.source} &rarr; {item.destination} &bull; {item.journeyDate}
+                    </Text>
+                  </div>
+                  <Text style={{ color: item.status === 'CONFIRMED' ? '#52c41a' : '#f5222d', fontSize: '0.75rem', fontWeight: '600' }}>
+                    {item.status || 'Confirmed'}
+                  </Text>
+                </div>
+              ))}
+            </Card>
+          ) : (
+            <Card style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px', border: '1px dashed #d9d9d9', textAlign: 'center', backgroundColor: '#fafafa' }} bodyStyle={{ padding: '20px' }}>
+              <Text style={{ display: 'block', color: '#8c8c8c', fontSize: '0.85rem', fontWeight: '500' }}>
+                No recent bookings found
+              </Text>
+            </Card>
+          )}
+
+          {/* Important Notice */}
+          <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <div style={{ background: '#faad14', borderRadius: '50%', padding: '6px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Info size={16} />
+            </div>
+            <div>
+              <Text style={{ color: '#d48806', fontWeight: '700', display: 'block', marginBottom: '4px' }}>Important</Text>
+              <Text style={{ color: '#8c8c8c', fontSize: '0.8rem', display: 'block', marginBottom: '8px' }}>
+                Train services may be affected due to maintenance work on 15 Sep 2025.
+              </Text>
+              <Button type="link" style={{ padding: 0, fontSize: '0.8rem', fontWeight: '600', color: '#1890ff' }}>View Details &rarr;</Button>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+            <Title level={5} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Quick Links</Title>
+          </div>
+          <Row gutter={[16, 16]}>
+            {[
+              { icon: <Coffee size={20} color="#1890ff" />, label: 'Food on Train' },
+              { icon: <MapPin size={20} color="#1890ff" />, label: 'Station Info' },
+              { icon: <Shield size={20} color="#1890ff" />, label: 'Travel Insurance' },
+              { icon: <Umbrella size={20} color="#1890ff" />, label: 'Tourist Places' },
+              { icon: <HelpCircle size={20} color="#1890ff" />, label: 'Help & Support' },
+              { icon: <Info size={20} color="#1890ff" />, label: 'FAQs' }
+            ].map((link, i) => (
+              <Col span={8} key={i}>
+                <Card 
+                  hoverable 
+                  bodyStyle={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}
+                  style={{ borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                >
+                  {link.icon}
+                  <Text style={{ fontSize: '0.7rem', color: '#595959', fontWeight: '500', lineHeight: 1.2 }}>{link.label}</Text>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+        </Col>
+      </Row>
+
+      {/* Available Trains / Booking Modal */}
+      <Modal
+        title={<span style={{ color: '#00234b', fontWeight: '700', fontSize: '1.2rem' }}>Available Trains for Booking</span>}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={650}
+        style={{ borderRadius: '16px' }}
+      >
+        <div style={{ padding: '10px 0' }}>
+          <Text style={{ color: '#595959', fontSize: '0.9rem', marginBottom: '16px', display: 'block' }}>
+            Select a train to confirm your reservation:
+          </Text>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {availableTrains.map((train) => (
+              <div 
+                key={train.id}
+                style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  border: '1px solid #e8e8e8', 
+                  display: 'flex', 
+                  justify: 'space-between', 
+                  alignItems: 'center',
+                  background: '#fcfcfc'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Text style={{ fontWeight: '700', fontSize: '1rem', color: '#00234b' }}>{train.trainName}</Text>
+                    <Tag color="blue">{train.trainNumber}</Tag>
+                    <Tag color="orange">{train.class}</Tag>
+                  </div>
+                  <Text style={{ color: '#595959', fontSize: '0.85rem', display: 'block', marginTop: '4px' }}>
+                    {train.source} &rarr; {train.destination}
+                  </Text>
+                  <Text style={{ color: '#8c8c8c', fontSize: '0.8rem' }}>
+                    Dep: {train.departureTime} &bull; Arr: {train.arrivalTime} ({train.duration})
+                  </Text>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <Text style={{ fontSize: '1.2rem', fontWeight: '800', color: '#1890ff', display: 'block' }}>
+                    ₹ {train.fare}
+                  </Text>
+                  <Button 
+                    type="primary" 
+                    onClick={() => handleConfirmBooking(train)}
+                    style={{ marginTop: '6px', borderRadius: '6px', background: '#0d47a1', fontWeight: '600' }}
+                  >
+                    Confirm Booking
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </Modal>
     </div>
   );
 };
 
 export default Home;
+
