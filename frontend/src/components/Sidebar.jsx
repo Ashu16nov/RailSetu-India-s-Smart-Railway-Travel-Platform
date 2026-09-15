@@ -25,15 +25,23 @@ const Sidebar = () => {
   const logout = useAuthStore(state => state.logout);
 
   const menuItems = [
-    { key: '/', icon: <Home size={20} />, label: 'Home' },
-    { key: '/book', icon: <Ticket size={20} />, label: 'Book Ticket' },
-    { key: '/pnr', icon: <Search size={20} />, label: 'Check PNR Status' },
-    { key: '/live', icon: <Train size={20} />, label: 'Live Train Status' },
-    { key: '/my-bookings', icon: <List size={20} />, label: 'My Bookings' },
-    { key: '/cancel', icon: <XCircle size={20} />, label: 'Cancel Ticket' },
-    { key: '/refund', icon: <IndianRupee size={20} />, label: 'Refund Status' },
-    { key: '/profile', icon: <User size={20} />, label: 'Profile' },
-    { key: '/settings', icon: <Settings size={20} />, label: 'Settings' }
+    { key: '/', icon: <Home size={18} />, label: 'Home' },
+    { key: '/book', icon: <Ticket size={18} />, label: 'Book Ticket' },
+    { key: '/pnr', icon: <Search size={18} />, label: 'PNR Status' },
+    { key: '/live', icon: <Train size={18} />, label: 'Live Train Status' },
+    { key: '/my-bookings', icon: <List size={18} />, label: 'My Bookings' },
+    { key: '/profile', icon: <User size={18} />, label: 'My Profile' },
+    { key: '/settings', icon: <Settings size={18} />, label: 'Settings' },
+    { 
+      key: 'logout', 
+      icon: <LogOut size={18} />, 
+      label: 'Logout',
+      action: () => {
+        logout();
+        message.info('Logged out successfully');
+        navigate('/');
+      }
+    }
   ];
 
   return (
@@ -43,15 +51,16 @@ const Sidebar = () => {
       left: 0,
       bottom: 0,
       width: '260px',
-      backgroundColor: '#1a2639',
+      backgroundColor: '#0d1b2a',
       display: 'flex',
       flexDirection: 'column',
       padding: '20px 0',
-      zIndex: 900
+      zIndex: 900,
+      borderRight: '1px solid rgba(255,255,255,0.05)'
     }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 16px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', padding: '0 16px' }}>
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.key;
+          const isActive = location.pathname === item.key || (item.key === '/profile' && location.pathname === '/my-profile');
           return (
             <div
               key={item.key}
@@ -59,17 +68,18 @@ const Sidebar = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
-                padding: '12px 20px',
+                gap: '14px',
+                padding: '12px 18px',
                 borderRadius: '12px',
                 cursor: 'pointer',
                 backgroundColor: isActive ? '#1890ff' : 'transparent',
-                color: isActive ? '#ffffff' : '#8b9bb4',
+                color: isActive ? '#ffffff' : '#94a3b8',
                 transition: 'all 0.2s ease',
                 fontWeight: isActive ? '600' : '500',
+                boxShadow: isActive ? '0 4px 14px rgba(24,144,255,0.3)' : 'none'
               }}
               onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)';
               }}
               onMouseLeave={(e) => {
                 if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
@@ -78,44 +88,45 @@ const Sidebar = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.icon}
               </div>
-              <span style={{ fontSize: '0.95rem' }}>{item.label}</span>
+              <span style={{ fontSize: '0.92rem' }}>{item.label}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Bottom Ad Card */}
-      <div style={{ padding: '0 20px', marginTop: 'auto' }}>
+      {/* Bottom Sidebar Promo Card (Matching uploaded screenshot) */}
+      <div style={{ padding: '0 16px', marginTop: 'auto' }}>
         <div style={{
-          background: 'linear-gradient(to bottom right, #24344d, #182335)',
+          position: 'relative',
           borderRadius: '16px',
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          border: '1px solid rgba(255,255,255,0.05)'
+          overflow: 'hidden',
+          height: '150px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
         }}>
-          <Train size={32} color="#ffffff" style={{ marginBottom: '12px' }} />
-          <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: '1rem', marginBottom: '8px' }}>
-            Travel Smart<br />with RailSetu
-          </Text>
-          <Text style={{ color: '#8b9bb4', fontSize: '0.8rem' }}>
-            Book. Track. Explore.
-          </Text>
-          <div style={{ 
-            marginTop: '16px', 
-            width: '100%', 
-            height: '80px', 
-            borderRadius: '8px', 
-            overflow: 'hidden',
-            background: '#0f172a'
+          <img 
+            src="https://images.unsplash.com/photo-1541427468627-a89a96e5ca1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+            alt="Safe Journeys"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to top, rgba(13,27,42,0.95) 0%, rgba(13,27,42,0.4) 60%, rgba(13,27,42,0.1) 100%)',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end'
           }}>
-            <img 
-              src="https://images.unsplash.com/photo-1541427468627-a89a96e5ca1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" 
-              alt="Train"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
-            />
+            <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: '1.05rem', lineHeight: 1.2, margin: 0 }}>
+              Safe Journeys<br />Better Tomorrow
+            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px' }}>
+              <Train size={16} color="#1890ff" />
+              <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: '0.85rem' }}>
+                Rail<span style={{ color: '#FB792B' }}>Setu</span>
+              </Text>
+            </div>
           </div>
         </div>
       </div>

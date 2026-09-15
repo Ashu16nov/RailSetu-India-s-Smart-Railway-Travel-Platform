@@ -6,6 +6,8 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import BookTicket from './pages/BookTicket';
 
+import Profile from './pages/Profile';
+
 // Separate layout for authentication pages
 const AppContainer = ({ children }) => {
   const location = useLocation();
@@ -30,6 +32,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/book" element={<BookTicket />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/my-profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

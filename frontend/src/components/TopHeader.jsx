@@ -71,64 +71,56 @@ const TopHeader = () => {
         </div>
       </div>
 
-      {/* Middle - Navigation Links */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '28px', alignItems: 'center' }}>
-        {[
-          { key: '/', label: 'Home' },
-          { key: '/book', label: 'Book Ticket' },
-          { key: '/pnr', label: 'PNR Status' },
-          { key: '/live', label: 'Live Train Status' },
-          { key: '/my-bookings', label: 'My Bookings' }
-        ].map((navItem) => {
-          const isActive = location.pathname === navItem.key;
-          return (
-            <div
-              key={navItem.key}
-              onClick={() => navigate(navItem.key)}
-              style={{
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: isActive ? '700' : '500',
-                color: isActive ? '#0d47a1' : '#595959',
-                borderBottom: isActive ? '2px solid #0d47a1' : '2px solid transparent',
-                padding: '22px 4px 18px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {navItem.label}
-            </div>
-          );
-        })}
-        <div style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500', color: '#595959', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          More <ChevronDown size={14} />
-        </div>
+      {/* Middle - Search Input matching screenshot */}
+      <div style={{ flex: 1, maxWith: '600px', margin: '0 40px', display: 'flex', justifyContent: 'center' }}>
+        <Input 
+          size="large"
+          placeholder="Search trains, stations, or destinations..."
+          prefix={<Search size={18} color="#94a3b8" style={{ marginRight: '8px' }} />}
+          style={{
+            maxWidth: '520px',
+            borderRadius: '24px',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            fontSize: '0.88rem'
+          }}
+        />
       </div>
 
       {/* Right - Profile & Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <Badge dot color="red">
-          <Bell size={20} color="#595959" style={{ cursor: 'pointer' }} />
+        <Badge count={3} color="#ff4d4f" size="small">
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            borderRadius: '50%', 
+            backgroundColor: '#f1f5f9', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            cursor: 'pointer'
+          }}>
+            <Bell size={18} color="#475569" />
+          </div>
         </Badge>
-        
-        <HelpCircle size={20} color="#595959" style={{ cursor: 'pointer' }} />
 
         {user ? (
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
               <Avatar 
-                src="https://randomuser.me/api/portraits/men/32.jpg" 
-                size={40} 
-                style={{ border: '2px solid #e8e8e8' }}
+                size={38} 
+                icon={<User size={22} color="#0d47a1" />}
+                style={{ backgroundColor: '#e3f2fd', border: '1px solid #bbdefb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                <Text style={{ fontWeight: '600', fontSize: '0.9rem', color: '#262626' }}>
+                <Text style={{ fontWeight: '700', fontSize: '0.88rem', color: '#1e293b' }}>
                   {user?.name || 'Ashu Kumar'}
                 </Text>
-                <Text style={{ fontSize: '0.75rem', color: '#8c8c8c' }}>
-                  {user?.role === 'admin' ? 'Administrator' : 'Traveller'}
+                <Text style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                  {user?.role || 'Regular User'}
                 </Text>
               </div>
-              <ChevronDown size={16} color="#8c8c8c" />
+              <ChevronDown size={15} color="#94a3b8" />
             </div>
           </Dropdown>
         ) : (

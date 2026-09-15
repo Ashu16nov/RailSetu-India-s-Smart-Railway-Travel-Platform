@@ -1,17 +1,34 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const useAuthStore = create((set) => ({
-  user: JSON.parse(localStorage.getItem('railsetu_user')) || null,
+const defaultUser = {
+  _id: 'usr_ashu_101',
+  name: 'Ashu Kumar',
+  email: 'ashukumar@example.com',
+  phone: '+91 9876543210',
+  dob: '15-04-2002',
+  gender: 'Male',
+  nationality: 'Indian',
+  role: 'Regular User',
+  preferredClass: 'SL',
+  preferredBerth: 'No Preference',
+  foodPreference: 'Veg',
+  disabilityConcession: 'None'
+};
+
+const savedUser = JSON.parse(localStorage.getItem('railsetu_user'));
+
+const useAuthStore = create((set, get) => ({
+  user: savedUser ? { ...defaultUser, ...savedUser } : defaultUser,
   loading: false,
   error: null,
   
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      // Direct authorized access check for admin
       if (email === 'admin' && password === 'admin123') {
         const mockAdmin = {
+          ...defaultUser,
           _id: 'admin_mock_123',
           name: 'Administrator',
           email: 'admin@railsetu.in',
@@ -25,16 +42,17 @@ const useAuthStore = create((set) => ({
       }
 
       const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      localStorage.setItem('railsetu_user', JSON.stringify(data));
-      set({ user: data, loading: false });
+      const fullUser = { ...defaultUser, ...data };
+      localStorage.setItem('railsetu_user', JSON.stringify(fullUser));
+      set({ user: fullUser, loading: false });
     } catch (error) {
-      // Granted authorized fallback access for testing when backend database connection fails
       if (error.code === 'ERR_NETWORK' || error.response?.status >= 500 || error.message?.includes('Network Error')) {
         const authorizedUser = {
+          ...defaultUser,
           _id: 'usr_' + Date.now(),
-          name: email.split('@')[0].toUpperCase() || 'Authorized User',
-          email: email,
-          role: email.toLowerCase().includes('admin') ? 'admin' : 'user',
+          name: email.includes('@') ? (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)) : 'Ashu Kumar',
+          email: email.includes('@') ? email : 'ashukumar@example.com',
+          role: email.toLowerCase().includes('admin') ? 'admin' : 'Regular User',
           isAadhaarVerified: true,
           token: 'jwt_authorized_token_' + Date.now()
         };
@@ -50,11 +68,19 @@ const useAuthStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const { data } = await axios.post('http://localhost:5000/api/auth/register', { name, email, password, phone });
-      localStorage.setItem('railsetu_user', JSON.stringify(data));
-      set({ user: data, loading: false });
+      const fullUser = { ...defaultUser, ...data };
+      localStorage.setItem('railsetu_user', JSON.stringify(fullUser));
+      set({ user: fullUser, loading: false });
     } catch (error) {
       set({ error: error.response?.data?.message || error.message, loading: false });
     }
+  },
+
+  updateUserProfile: (updatedFields) => {
+    const currentUser = get().user || defaultUser;
+    const updatedUser = { ...currentUser, ...updatedFields };
+    localStorage.setItem('railsetu_user', JSON.stringify(updatedUser));
+    set({ user: updatedUser });
   },
 
   verifyAadhaar: async (aadhaarNumber, otp) => {
@@ -64,7 +90,7 @@ const useAuthStore = create((set) => ({
       const { data } = await axios.post(
         'http://localhost:5000/api/auth/verify-aadhaar',
         { aadhaarNumber, otp },
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        { headers: { Authorization: `Bearer ${user?.token}` } }
       );
       
       const updatedUser = { ...user, isAadhaarVerified: data.isAadhaarVerified, aadhaarHash: data.aadhaarHash };
@@ -79,7 +105,7 @@ const useAuthStore = create((set) => ({
 
   logout: () => {
     localStorage.removeItem('railsetu_user');
-    set({ user: null });
+    set({ user: defaultUser });
   }
 }));
 
