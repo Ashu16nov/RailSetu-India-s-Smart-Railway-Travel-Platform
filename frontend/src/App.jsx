@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import BookTicket from './pages/BookTicket';
 
 import Profile from './pages/Profile';
+import PNRStatus from './pages/PNRStatus';
 
 // Separate layout for authentication pages
 const AppContainer = ({ children }) => {
@@ -32,6 +33,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/book" element={<BookTicket />} />
+          <Route path="/pnr" element={<PNRStatus />} />
+          <Route path="/check-pnr" element={<PNRStatus />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/my-profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
