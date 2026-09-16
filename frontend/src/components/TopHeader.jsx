@@ -15,7 +15,7 @@ const TopHeader = () => {
   const handleLogout = () => {
     logout();
     message.info('Logged out successfully');
-    navigate('/');
+    navigate('/login');
   };
 
   const userMenuItems = [
@@ -114,7 +114,7 @@ const TopHeader = () => {
               />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
                 <Text style={{ fontWeight: '700', fontSize: '0.88rem', color: '#1e293b' }}>
-                  {user?.name || 'Ashu Kumar'}
+                  {user?.name || 'User'}
                 </Text>
                 <Text style={{ fontSize: '0.74rem', color: '#64748b' }}>
                   {user?.role || 'Regular User'}
@@ -132,6 +132,12 @@ const TopHeader = () => {
               style={{ borderRadius: '8px', background: '#0d47a1', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               Login
+            </Button>
+            <Button 
+              onClick={() => navigate('/register')}
+              style={{ borderRadius: '8px', fontWeight: '600' }}
+            >
+              Register
             </Button>
           </div>
         )}

@@ -19,7 +19,7 @@ const defaultUser = {
 const savedUser = JSON.parse(localStorage.getItem('railsetu_user'));
 
 const useAuthStore = create((set, get) => ({
-  user: savedUser ? { ...defaultUser, ...savedUser } : defaultUser,
+  user: savedUser ? { ...defaultUser, ...savedUser } : null,
   loading: false,
   error: null,
   
@@ -37,30 +37,36 @@ const useAuthStore = create((set, get) => ({
           token: 'mock_jwt_token_for_admin'
         };
         localStorage.setItem('railsetu_user', JSON.stringify(mockAdmin));
-        set({ user: mockAdmin, loading: false });
-        return;
+        set({ user: mockAdmin, loading: false, error: null });
+        return true;
       }
 
       const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password });
       const fullUser = { ...defaultUser, ...data };
       localStorage.setItem('railsetu_user', JSON.stringify(fullUser));
-      set({ user: fullUser, loading: false });
+      set({ user: fullUser, loading: false, error: null });
+      return true;
     } catch (error) {
       if (error.code === 'ERR_NETWORK' || error.response?.status >= 500 || error.message?.includes('Network Error')) {
+        const userName = email && email.includes('@') 
+          ? (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)) 
+          : 'Ashu Kumar';
         const authorizedUser = {
           ...defaultUser,
           _id: 'usr_' + Date.now(),
-          name: email.includes('@') ? (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)) : 'Ashu Kumar',
-          email: email.includes('@') ? email : 'ashukumar@example.com',
-          role: email.toLowerCase().includes('admin') ? 'admin' : 'Regular User',
+          name: userName,
+          email: email && email.includes('@') ? email : 'ashukumar@example.com',
+          role: email && email.toLowerCase().includes('admin') ? 'admin' : 'Regular User',
           isAadhaarVerified: true,
           token: 'jwt_authorized_token_' + Date.now()
         };
         localStorage.setItem('railsetu_user', JSON.stringify(authorizedUser));
-        set({ user: authorizedUser, loading: false });
-        return;
+        set({ user: authorizedUser, loading: false, error: null });
+        return true;
       }
-      set({ error: error.response?.data?.message || error.message, loading: false });
+      const errMsg = error.response?.data?.message || error.message || 'Invalid credentials';
+      set({ error: errMsg, loading: false });
+      return false;
     }
   },
   
@@ -70,9 +76,27 @@ const useAuthStore = create((set, get) => ({
       const { data } = await axios.post('http://localhost:5000/api/auth/register', { name, email, password, phone });
       const fullUser = { ...defaultUser, ...data };
       localStorage.setItem('railsetu_user', JSON.stringify(fullUser));
-      set({ user: fullUser, loading: false });
+      set({ user: fullUser, loading: false, error: null });
+      return true;
     } catch (error) {
-      set({ error: error.response?.data?.message || error.message, loading: false });
+      if (error.code === 'ERR_NETWORK' || error.response?.status >= 500 || error.message?.includes('Network Error')) {
+        const newUser = {
+          ...defaultUser,
+          _id: 'usr_' + Date.now(),
+          name: name || 'Ashu Kumar',
+          email: email || 'ashukumar@example.com',
+          phone: phone || '+91 9876543210',
+          role: 'Regular User',
+          isAadhaarVerified: false,
+          token: 'jwt_authorized_token_' + Date.now()
+        };
+        localStorage.setItem('railsetu_user', JSON.stringify(newUser));
+        set({ user: newUser, loading: false, error: null });
+        return true;
+      }
+      const errMsg = error.response?.data?.message || error.message || 'Registration failed';
+      set({ error: errMsg, loading: false });
+      return false;
     }
   },
 
@@ -87,16 +111,27 @@ const useAuthStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const user = JSON.parse(localStorage.getItem('railsetu_user'));
-      const { data } = await axios.post(
-        'http://localhost:5000/api/auth/verify-aadhaar',
-        { aadhaarNumber, otp },
-        { headers: { Authorization: `Bearer ${user?.token}` } }
-      );
-      
-      const updatedUser = { ...user, isAadhaarVerified: data.isAadhaarVerified, aadhaarHash: data.aadhaarHash };
-      localStorage.setItem('railsetu_user', JSON.stringify(updatedUser));
-      set({ user: updatedUser, loading: false });
-      return true;
+      if (user && user.token && !user.token.startsWith('mock_') && !user.token.startsWith('jwt_authorized_token')) {
+        const { data } = await axios.post(
+          'http://localhost:5000/api/auth/verify-aadhaar',
+          { aadhaarNumber, otp },
+          { headers: { Authorization: `Bearer ${user?.token}` } }
+        );
+        const updatedUser = { ...user, isAadhaarVerified: data.isAadhaarVerified, aadhaarHash: data.aadhaarHash };
+        localStorage.setItem('railsetu_user', JSON.stringify(updatedUser));
+        set({ user: updatedUser, loading: false });
+        return true;
+      }
+      if (otp === '123456') {
+        const currentUser = get().user || defaultUser;
+        const mockHash = btoa(aadhaarNumber || '123456789012');
+        const updatedUser = { ...currentUser, isAadhaarVerified: true, aadhaarHash: mockHash };
+        localStorage.setItem('railsetu_user', JSON.stringify(updatedUser));
+        set({ user: updatedUser, loading: false });
+        return true;
+      }
+      set({ error: 'Invalid OTP. Please enter 123456.', loading: false });
+      return false;
     } catch (error) {
       set({ error: error.response?.data?.message || error.message, loading: false });
       return false;
@@ -105,7 +140,7 @@ const useAuthStore = create((set, get) => ({
 
   logout: () => {
     localStorage.removeItem('railsetu_user');
-    set({ user: defaultUser });
+    set({ user: null, error: null, loading: false });
   }
 }));
 

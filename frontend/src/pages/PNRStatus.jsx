@@ -30,19 +30,38 @@ const PNRStatus = () => {
     handleCheckPNR('2457812365');
   }, []);
 
+  const getStatusBannerInfo = (status) => {
+    if (!status) return { bg: '#f6ffed', border: '#b7eb8f', iconBg: '#52c41a', color: '#52c41a', msg: 'Your ticket is confirmed. Happy Journey!' };
+    const upper = status.toUpperCase();
+    if (upper.includes('RAC')) {
+      return { bg: '#fffbe6', border: '#ffe58f', iconBg: '#fa8c16', color: '#d46b08', msg: 'Your ticket is in RAC state. Seats will be allocated during charting.' };
+    } else if (upper.includes('WAIT') || upper.includes('WL')) {
+      return { bg: '#fff2e8', border: '#ffbb96', iconBg: '#ff4d4f', color: '#d4380d', msg: 'Your ticket is in Waiting List. Please check before departure.' };
+    } else if (upper.includes('CAN')) {
+      return { bg: '#f5f5f5', border: '#d9d9d9', iconBg: '#8c8c8c', color: '#595959', msg: 'This ticket booking has been cancelled.' };
+    }
+    return { bg: '#f6ffed', border: '#b7eb8f', iconBg: '#52c41a', color: '#52c41a', msg: 'Your ticket is confirmed. Happy Journey!' };
+  };
+
   const handleCheckPNR = (pnrToSearch = pnrInput) => {
-    const cleanedPNR = pnrToSearch.trim();
-    if (!cleanedPNR || cleanedPNR.length < 5) {
-      return message.warning('Please enter a valid 10-digit PNR number');
+    const cleanedPNR = (pnrToSearch || '').trim();
+    if (!cleanedPNR || !/^\d{10}$/.test(cleanedPNR)) {
+      message.warning('Please enter a valid 10-digit PNR number (e.g. 2457812365)');
+      return;
     }
 
     setLoading(true);
     setTimeout(() => {
       const data = getBookingByPNR(cleanedPNR);
-      setPnrResult(data);
+      if (data) {
+        setPnrResult(data);
+        message.success('PNR Status updated in real-time');
+      } else {
+        setPnrResult(null);
+        message.error('No record found for the entered PNR number');
+      }
       setLoading(false);
-      message.success('PNR Status updated in real-time');
-    }, 400);
+    }, 350);
   };
 
   const passengerColumns = [
@@ -77,23 +96,36 @@ const PNRStatus = () => {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 100,
-      render: (text) => (
-        <Tag 
-          color="green" 
-          style={{
-            borderRadius: '6px',
-            padding: '2px 10px',
-            fontWeight: '700',
-            fontSize: '0.78rem',
-            backgroundColor: '#e6f4ea',
-            color: '#137333',
-            border: 'none'
-          }}
-        >
-          {text}
-        </Tag>
-      )
+      width: 110,
+      render: (text) => {
+        let bg = '#e6f4ea';
+        let color = '#137333';
+        if (text && text.includes('RAC')) {
+          bg = '#fff7e6';
+          color = '#d46b08';
+        } else if (text && (text.includes('WL') || text.includes('WAIT'))) {
+          bg = '#fff2e8';
+          color = '#d4380d';
+        } else if (text && text.includes('CAN')) {
+          bg = '#f5f5f5';
+          color = '#595959';
+        }
+        return (
+          <Tag 
+            style={{
+              borderRadius: '6px',
+              padding: '2px 10px',
+              fontWeight: '700',
+              fontSize: '0.78rem',
+              backgroundColor: bg,
+              color: color,
+              border: 'none'
+            }}
+          >
+            {text}
+          </Tag>
+        );
+      }
     },
     {
       title: 'Berth No.',
@@ -202,6 +234,7 @@ const PNRStatus = () => {
                 onPressEnter={() => handleCheckPNR(pnrInput)}
                 prefix={<Search size={18} color="#94a3b8" style={{ marginRight: '8px' }} />}
                 style={{ borderRadius: '12px', height: '48px', fontSize: '1rem' }}
+                maxLength={10}
               />
               <Button 
                 type="primary"
@@ -223,10 +256,25 @@ const PNRStatus = () => {
               </Button>
             </div>
 
-            <div style={{ marginTop: '8px' }}>
-              <Text type="secondary" style={{ fontSize: '0.8rem' }}>
-                Enter 10 digit PNR number (e.g. 2457812365)
-              </Text>
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <Text type="secondary" style={{ fontSize: '0.8rem', fontWeight: '600' }}>Sample PNRs:</Text>
+              {[
+                { pnr: '2457812365', label: '2457812365 (Confirmed)' },
+                { pnr: '8549120364', label: '8549120364 (RAC)' },
+                { pnr: '9812456730', label: '9812456730 (WL)' }
+              ].map((sample) => (
+                <Tag 
+                  key={sample.pnr} 
+                  color="blue" 
+                  style={{ cursor: 'pointer', borderRadius: '6px', padding: '2px 10px', fontWeight: '600' }}
+                  onClick={() => {
+                    setPnrInput(sample.pnr);
+                    handleCheckPNR(sample.pnr);
+                  }}
+                >
+                  {sample.label}
+                </Tag>
+              ))}
             </div>
           </Card>
 
@@ -240,61 +288,66 @@ const PNRStatus = () => {
             </Card>
           ) : pnrResult ? (
             <div>
-              {/* Green Confirmation Alert Banner */}
-              <div 
-                style={{
-                  backgroundColor: '#f6ffed',
-                  border: '1px solid #b7eb8f',
-                  borderRadius: '16px',
-                  padding: '20px 24px',
-                  marginBottom: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 10px rgba(82,196,26,0.05)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {/* Dynamic Status Alert Banner */}
+              {(() => {
+                const bannerInfo = getStatusBannerInfo(pnrResult.status);
+                return (
                   <div 
                     style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '50%',
-                      backgroundColor: '#52c41a',
+                      backgroundColor: bannerInfo.bg,
+                      border: `1px solid ${bannerInfo.border}`,
+                      borderRadius: '16px',
+                      padding: '20px 24px',
+                      marginBottom: '20px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 10px rgba(82,196,26,0.3)'
+                      justifyContent: 'space-between',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
                     }}
                   >
-                    <CheckCircle2 size={24} color="#ffffff" />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>
-                        PNR Status:
-                      </Title>
-                      <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#52c41a' }}>
-                        {pnrResult.status}
-                      </Title>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div 
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          backgroundColor: bannerInfo.iconBg,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
+                        }}
+                      >
+                        <CheckCircle2 size={24} color="#ffffff" />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>
+                            PNR Status:
+                          </Title>
+                          <Title level={4} style={{ margin: 0, fontWeight: '800', color: bannerInfo.color }}>
+                            {pnrResult.status}
+                          </Title>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: '0.88rem' }}>
+                          {bannerInfo.msg}
+                        </Text>
+                      </div>
                     </div>
-                    <Text type="secondary" style={{ fontSize: '0.88rem' }}>
-                      Your ticket is confirmed. Happy Journey!
-                    </Text>
-                  </div>
-                </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block' }}>PNR No.</Text>
-                  <Text strong style={{ fontSize: '1rem', color: '#1e293b', display: 'block', marginBottom: '2px' }}>
-                    {pnrResult.pnr}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block' }}>Booking Date</Text>
-                  <Text strong style={{ fontSize: '0.85rem', color: '#475569' }}>
-                    {pnrResult.bookingDate}
-                  </Text>
-                </div>
-              </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block' }}>PNR No.</Text>
+                      <Text strong style={{ fontSize: '1rem', color: '#1e293b', display: 'block', marginBottom: '2px' }}>
+                        {pnrResult.pnr}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block' }}>Booking Date</Text>
+                      <Text strong style={{ fontSize: '0.85rem', color: '#475569' }}>
+                        {pnrResult.bookingDate}
+                      </Text>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Train & Journey Details Card */}
               <Card 
@@ -454,7 +507,27 @@ const PNRStatus = () => {
                 </Text>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <Card style={{ borderRadius: '16px', textAlign: 'center', padding: '40px 20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+              <Info size={40} color="#fa8c16" style={{ marginBottom: '12px' }} />
+              <Title level={4} style={{ margin: '0 0 6px 0', color: '#1e293b', fontWeight: '700' }}>
+                No PNR Record Found
+              </Title>
+              <Text type="secondary" style={{ fontSize: '0.9rem', display: 'block', maxWidth: '420px', margin: '0 auto 16px' }}>
+                No booking record could be retrieved for PNR number <Text strong>{pnrInput}</Text>. Please verify the 10-digit PNR number or try one of the sample PNRs above.
+              </Text>
+              <Button 
+                type="primary" 
+                onClick={() => {
+                  setPnrInput('2457812365');
+                  handleCheckPNR('2457812365');
+                }}
+                style={{ borderRadius: '8px', fontWeight: '600' }}
+              >
+                Load Sample PNR (2457812365)
+              </Button>
+            </Card>
+          )}
 
         </Col>
 

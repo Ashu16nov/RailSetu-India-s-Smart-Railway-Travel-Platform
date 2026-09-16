@@ -30,18 +30,25 @@ const Sidebar = () => {
     { key: '/pnr', icon: <Search size={18} />, label: 'PNR Status' },
     { key: '/live', icon: <Train size={18} />, label: 'Live Train Status' },
     { key: '/my-bookings', icon: <List size={18} />, label: 'My Bookings' },
-    { key: '/profile', icon: <User size={18} />, label: 'My Profile' },
+    ...(user ? [
+      { key: '/profile', icon: <User size={18} />, label: 'My Profile' }
+    ] : []),
     { key: '/settings', icon: <Settings size={18} />, label: 'Settings' },
-    { 
-      key: 'logout', 
-      icon: <LogOut size={18} />, 
-      label: 'Logout',
-      action: () => {
-        logout();
-        message.info('Logged out successfully');
-        navigate('/');
+    ...(user ? [
+      { 
+        key: 'logout', 
+        icon: <LogOut size={18} />, 
+        label: 'Logout',
+        action: () => {
+          logout();
+          message.info('Logged out successfully');
+          navigate('/login');
+        }
       }
-    }
+    ] : [
+      { key: '/login', icon: <LogIn size={18} />, label: 'Login' },
+      { key: '/register', icon: <User size={18} />, label: 'Register' }
+    ])
   ];
 
   return (

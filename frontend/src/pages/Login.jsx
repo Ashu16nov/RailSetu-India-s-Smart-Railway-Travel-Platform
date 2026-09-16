@@ -15,13 +15,13 @@ const Login = () => {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    await login(values.email, values.password);
-    const user = useAuthStore.getState().user;
-    if (user) {
+    const success = await login(values.email, values.password);
+    if (success) {
       message.success('Login successful!');
       navigate('/');
     } else {
-      message.error(useAuthStore.getState().error || 'Login failed');
+      const err = useAuthStore.getState().error;
+      message.error(err || 'Login failed. Please check your credentials.');
     }
   };
 

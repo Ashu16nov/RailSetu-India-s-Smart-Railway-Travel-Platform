@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Typography, Input, Select, Button, Checkbox, Tag, message, Avatar } from 'antd';
 import { 
   User, 
@@ -29,6 +29,12 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, updateUserProfile } = useAuthStore();
   const bookings = useBookingStore((state) => state.bookings);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);

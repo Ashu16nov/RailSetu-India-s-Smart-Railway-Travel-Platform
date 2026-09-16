@@ -15,13 +15,13 @@ const Register = () => {
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    await register(values.name, values.email, values.password, values.phone);
-    const user = useAuthStore.getState().user;
-    if (user) {
+    const success = await register(values.name, values.email, values.password, values.phone);
+    if (success) {
       message.success('Registration successful! Please link Aadhaar.');
       navigate('/profile');
     } else {
-      message.error(useAuthStore.getState().error || 'Registration failed');
+      const err = useAuthStore.getState().error;
+      message.error(err || 'Registration failed.');
     }
   };
 

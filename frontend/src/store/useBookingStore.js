@@ -57,13 +57,65 @@ const useBookingStore = create((set, get) => ({
     set({ bookings: [] });
   },
 
-  getBookingByPNR: (pnrNumber) => {
+  cancelBooking: (bookingId) => {
     const list = get().bookings || [];
-    const found = list.find((b) => b.pnr === pnrNumber);
-    if (found) return found;
+    const updated = list.map((b) =>
+      b._id === bookingId || b.pnr === bookingId || b.bookingId === bookingId
+        ? { ...b, status: 'CANCELLED' }
+        : b
+    );
+    localStorage.setItem('railsetu_bookings', JSON.stringify(updated));
+    set({ bookings: updated });
+  },
 
-    // Default mock PNR matching uploaded image precisely
-    if (pnrNumber === '2457812365' || !pnrNumber) {
+  getBookingByPNR: (pnrNumber) => {
+    if (!pnrNumber) return null;
+    const cleanPnr = pnrNumber.trim();
+    const list = get().bookings || [];
+    const found = list.find((b) => b.pnr === cleanPnr || b.pnrNumber === cleanPnr);
+
+    if (found) {
+      const srcStr = found.source || 'New Delhi (NDLS)';
+      const dstStr = found.destination || 'Varanasi (BSB)';
+      const srcCode = srcStr.includes('(') ? srcStr.match(/\(([^)]+)\)/)?.[1] || 'NDLS' : srcStr.slice(0, 4).toUpperCase();
+      const dstCode = dstStr.includes('(') ? dstStr.match(/\(([^)]+)\)/)?.[1] || 'BSB' : dstStr.slice(0, 4).toUpperCase();
+
+      const rawPassengers = Array.isArray(found.passengers) && found.passengers.length > 0 
+        ? found.passengers 
+        : [{ name: found.passengerName || 'Ashu Kumar', age: 26, gender: 'Male' }];
+
+      const formattedPassengers = rawPassengers.map((p, idx) => ({
+        sNo: idx + 1,
+        name: p.name || `Passenger ${idx + 1}`,
+        age: p.age || 26,
+        gender: p.gender || 'Male',
+        status: p.status || found.status || 'CNF',
+        berth: p.seatNumber || (found.coach ? `${found.coach}-${found.berth || (idx + 1) * 12}` : `B2-${18 + idx * 6}`),
+        coach: p.coach || found.coach || 'B2'
+      }));
+
+      return {
+        pnr: found.pnr || cleanPnr,
+        bookingDate: found.createdAt ? new Date(found.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '14 Sep 2025',
+        trainNumber: found.trainNumber || '12561',
+        trainName: found.trainName || 'Swatantrata Senani Express',
+        source: srcCode,
+        sourceFull: srcStr,
+        destination: dstCode,
+        destinationFull: dstStr,
+        journeyDate: found.journeyDate || '20 Sep 2025',
+        className: found.className || '3A (AC 3 Tier)',
+        departureTime: found.journeyTime || '21:15',
+        arrivalTime: '05:30',
+        duration: '8h 15m',
+        currentStatus: found.status === 'CANCELED' ? 'Cancelled' : 'On Time',
+        status: found.status === 'CANCELED' ? 'Cancelled' : (found.status || 'Confirmed'),
+        passengers: formattedPassengers
+      };
+    }
+
+    // Check sample default PNR
+    if (cleanPnr === '2457812365') {
       return {
         pnr: '2457812365',
         bookingDate: '12 Sep 2025',
@@ -81,32 +133,52 @@ const useBookingStore = create((set, get) => ({
         currentStatus: 'On Time',
         status: 'Confirmed',
         passengers: [
-          { sNo: 1, name: 'Ashu Kumar', age: 26, gender: 'Male', status: 'CNF', berth: 'B2', coach: 'B2' },
-          { sNo: 2, name: 'Priya Sharma', age: 24, gender: 'Female', status: 'CNF', berth: 'B2', coach: 'B2' },
-          { sNo: 3, name: 'Rohit Verma', age: 30, gender: 'Male', status: 'CNF', berth: 'B2', coach: 'B2' }
+          { sNo: 1, name: 'Ashu Kumar', age: 26, gender: 'Male', status: 'CNF', berth: 'B2-24', coach: 'B2' },
+          { sNo: 2, name: 'Priya Sharma', age: 24, gender: 'Female', status: 'CNF', berth: 'B2-25', coach: 'B2' },
+          { sNo: 3, name: 'Rohit Verma', age: 30, gender: 'Male', status: 'CNF', berth: 'B2-26', coach: 'B2' }
         ]
       };
     }
 
-    // Dynamic fallback mock generator for any other 10-digit PNR
+    // Must be 10 digits
+    if (!/^\d{10}$/.test(cleanPnr)) {
+      return null;
+    }
+
+    // Deterministic Mock Data Generator for any valid 10-digit PNR
+    const pnrSum = cleanPnr.split('').reduce((acc, d) => acc + parseInt(d, 10), 0);
+    const trains = [
+      { trainNumber: '12951', trainName: 'Rajdhani Express', source: 'NDLS', sourceFull: 'New Delhi (NDLS)', destination: 'MMCT', destinationFull: 'Mumbai Central (MMCT)', departureTime: '16:55', arrivalTime: '08:35', duration: '15h 40m', className: '1A (AC 1st Class)' },
+      { trainNumber: '12561', trainName: 'Swatantrata Senani Exp', source: 'NDLS', sourceFull: 'New Delhi (NDLS)', destination: 'BSB', destinationFull: 'Varanasi Junction (BSB)', departureTime: '21:15', arrivalTime: '05:30', duration: '8h 15m', className: '3A (AC 3 Tier)' },
+      { trainNumber: '20685', trainName: 'Vande Bharat Express', source: 'MAS', sourceFull: 'Chennai Central (MAS)', destination: 'SBC', destinationFull: 'KSR Bengaluru (SBC)', departureTime: '05:50', arrivalTime: '10:15', duration: '4h 25m', className: 'CC (AC Chair Car)' },
+      { trainNumber: '12002', name: 'Shatabdi Express', source: 'NDLS', sourceFull: 'New Delhi (NDLS)', destination: 'BPL', destinationFull: 'Bhopal Junction (BPL)', departureTime: '06:00', arrivalTime: '14:05', duration: '8h 05m', className: '2A (AC 2 Tier)' },
+      { trainNumber: '12260', trainName: 'Duronto Express', source: 'HWH', sourceFull: 'Howrah Junction (HWH)', destination: 'SDAH', destinationFull: 'Sealdah (SDAH)', departureTime: '20:20', arrivalTime: '12:55', duration: '16h 35m', className: 'SL (Sleeper Class)' }
+    ];
+
+    const selectedTrain = trains[pnrSum % trains.length];
+    const statuses = ['Confirmed', 'Confirmed', 'RAC', 'Waiting List'];
+    const currentStatus = statuses[pnrSum % statuses.length];
+    const passStatus = currentStatus === 'Confirmed' ? 'CNF' : (currentStatus === 'RAC' ? 'RAC 14' : 'WL 28');
+
     return {
-      pnr: pnrNumber,
-      bookingDate: '14 Sep 2025',
-      trainNumber: '20685',
-      trainName: 'Vande Bharat Express',
-      source: 'NDLS',
-      sourceFull: 'New Delhi (NDLS)',
-      destination: 'BSB',
-      destinationFull: 'Varanasi Junction (BSB)',
-      journeyDate: '22 Sep 2025',
-      className: 'CC (Chair Car)',
-      departureTime: '06:00',
-      arrivalTime: '14:00',
-      duration: '8h 00m',
-      currentStatus: 'On Time',
-      status: 'Confirmed',
+      pnr: cleanPnr,
+      bookingDate: '10 Sep 2025',
+      trainNumber: selectedTrain.trainNumber,
+      trainName: selectedTrain.trainName,
+      source: selectedTrain.source,
+      sourceFull: selectedTrain.sourceFull,
+      destination: selectedTrain.destination,
+      destinationFull: selectedTrain.destinationFull,
+      journeyDate: '24 Sep 2025',
+      className: selectedTrain.className,
+      departureTime: selectedTrain.departureTime,
+      arrivalTime: selectedTrain.arrivalTime,
+      duration: selectedTrain.duration,
+      currentStatus: currentStatus === 'Confirmed' ? 'On Time' : 'Delayed by 15m',
+      status: currentStatus,
       passengers: [
-        { sNo: 1, name: 'Ashu Kumar', age: 26, gender: 'Male', status: 'CNF', berth: 'C4', coach: 'C4' }
+        { sNo: 1, name: 'Ashu Kumar', age: 26, gender: 'Male', status: passStatus, berth: currentStatus === 'Confirmed' ? 'B3-14' : 'RAC-07', coach: 'B3' },
+        { sNo: 2, name: 'Suman Kumar', age: 28, gender: 'Male', status: passStatus, berth: currentStatus === 'Confirmed' ? 'B3-15' : 'RAC-08', coach: 'B3' }
       ]
     };
   }
