@@ -519,9 +519,9 @@ const Profile = () => {
             <Row gutter={[12, 12]}>
               {[
                 { label: 'Book Ticket', icon: <Ticket size={18} color="#0d47a1" />, path: '/book' },
-                { label: 'PNR Status', icon: <Search size={18} color="#0d47a1" />, path: '/' },
-                { label: 'Live Train Status', icon: <Train size={18} color="#0d47a1" />, path: '/' },
-                { label: 'Cancel Ticket', icon: <XCircle size={18} color="#0d47a1" />, path: '/' }
+                { label: 'PNR Status', icon: <Search size={18} color="#0d47a1" />, path: '/pnr' },
+                { label: 'Live Train Status', icon: <Train size={18} color="#0d47a1" />, path: '/live' },
+                { label: 'Cancel Ticket', icon: <XCircle size={18} color="#0d47a1" />, path: '/my-bookings' }
               ].map((action, idx) => (
                 <Col span={12} key={idx}>
                   <div

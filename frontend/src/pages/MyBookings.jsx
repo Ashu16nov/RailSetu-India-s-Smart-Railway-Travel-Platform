@@ -441,24 +441,36 @@ const MyBookings = () => {
 
                   {/* Actions / Cancellation Red Banner */}
                   {isCancelled ? (
-                    <div 
-                      style={{
-                        backgroundColor: '#fff2e8',
-                        border: '1px solid #ffbb96',
-                        borderRadius: '12px',
-                        padding: '12px 18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px'
-                      }}
-                    >
-                      <Info size={18} color="#ff4d4f" />
-                      <Text style={{ color: '#d4380d', fontSize: '0.85rem' }}>
-                        This booking has been cancelled. Refund has been processed to your original payment method.
-                      </Text>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div 
+                        style={{
+                          backgroundColor: '#fff2e8',
+                          border: '1px solid #ffbb96',
+                          borderRadius: '12px',
+                          padding: '12px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                      >
+                        <Info size={18} color="#ff4d4f" />
+                        <Text style={{ color: '#d4380d', fontSize: '0.85rem' }}>
+                          This booking has been cancelled. Refund has been processed to your original payment method.
+                        </Text>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <Button
+                          type="primary"
+                          ghost
+                          onClick={() => navigate('/book', { state: { search: booking.source } })}
+                          style={{ borderRadius: '8px', fontWeight: '600' }}
+                        >
+                          Book Again
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '8px' }}>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '8px', alignItems: 'center' }}>
                       <Button 
                         type="primary" 
                         icon={<Eye size={16} />}
@@ -467,7 +479,7 @@ const MyBookings = () => {
                           borderRadius: '10px',
                           fontWeight: '700',
                           backgroundColor: '#1890ff',
-                          padding: '0 24px',
+                          padding: '0 20px',
                           height: '40px',
                           display: 'flex',
                           alignItems: 'center',
@@ -478,25 +490,57 @@ const MyBookings = () => {
                       </Button>
 
                       <Button 
-                        icon={<Download size={16} />}
-                        onClick={() => handleDownloadTicket(booking)}
+                        icon={<Search size={16} />}
+                        onClick={() => navigate(`/pnr?pnr=${booking.pnr}`)}
                         style={{
                           borderRadius: '10px',
                           fontWeight: '600',
-                          padding: '0 20px',
+                          padding: '0 16px',
                           height: '40px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px'
                         }}
                       >
-                        Download Ticket
+                        PNR Status
+                      </Button>
+
+                      <Button 
+                        icon={<Train size={16} />}
+                        onClick={() => navigate(`/live?train=${booking.trainNumber}`)}
+                        style={{
+                          borderRadius: '10px',
+                          fontWeight: '600',
+                          padding: '0 16px',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        Live Status
+                      </Button>
+
+                      <Button 
+                        icon={<Download size={16} />}
+                        onClick={() => handleDownloadTicket(booking)}
+                        style={{
+                          borderRadius: '10px',
+                          fontWeight: '600',
+                          padding: '0 16px',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        Download
                       </Button>
 
                       <Popconfirm
                         title="Cancel Booking"
                         description="Are you sure you want to cancel this ticket booking?"
-                        onConfirm={() => handleCancelBooking(booking._id)}
+                        onConfirm={() => handleCancelBooking(booking._id || booking.pnr)}
                         okText="Yes, Cancel"
                         cancelText="No"
                         okButtonProps={{ danger: true }}
@@ -507,15 +551,15 @@ const MyBookings = () => {
                           style={{
                             borderRadius: '10px',
                             fontWeight: '600',
-                            padding: '0 20px',
+                            padding: '0 16px',
                             height: '40px',
-                            marginLeft: 'auto',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px'
+                            gap: '6px',
+                            marginLeft: 'auto'
                           }}
                         >
-                          Cancel Booking
+                          Cancel
                         </Button>
                       </Popconfirm>
                     </div>

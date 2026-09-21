@@ -1,6 +1,6 @@
-import React from 'react';
-import { Typography, Input, Avatar, Badge, Dropdown, Button, message } from 'antd';
-import { Train, Search, Bell, HelpCircle, ChevronDown, LogIn, User, Settings, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Typography, Input, Avatar, Badge, Dropdown, Button, message, Tooltip } from 'antd';
+import { Train, Search, Bell, HelpCircle, ChevronDown, LogIn, User, Settings, LogOut, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
 
@@ -11,11 +11,28 @@ const TopHeader = () => {
   const logout = useAuthStore(state => state.logout);
   const navigate = useNavigate();
   const location = useLocation();
+  const [globalSearch, setGlobalSearch] = useState('');
 
   const handleLogout = () => {
     logout();
     message.info('Logged out successfully');
     navigate('/login');
+  };
+
+  const handleGlobalSearch = (value) => {
+    const term = (value || globalSearch).trim();
+    if (!term) return;
+
+    if (/^\d{10}$/.test(term)) {
+      navigate(`/pnr?pnr=${term}`);
+      message.info(`Navigating to PNR Status for ${term}`);
+    } else if (/^\d{5}$/.test(term) || term.toLowerCase().includes('express') || term.toLowerCase().includes('shatabdi') || term.toLowerCase().includes('vande')) {
+      navigate(`/live?train=${encodeURIComponent(term)}`);
+      message.info(`Navigating to Live Status for ${term}`);
+    } else {
+      navigate('/book', { state: { search: term } });
+      message.info(`Searching trains matching "${term}"`);
+    }
   };
 
   const userMenuItems = [
@@ -56,27 +73,68 @@ const TopHeader = () => {
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
       zIndex: 1000
     }}>
-      {/* Left side - Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', width: '236px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Train color="#0d47a1" size={32} strokeWidth={2} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ color: '#001529', fontSize: '1.5rem', fontWeight: '800', lineHeight: 1, letterSpacing: '-0.5px' }}>
-              Rail<span style={{ color: '#FB792B' }}>Setu</span>
+      {/* Left side - Logo & History Navigation Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Train color="#0d47a1" size={32} strokeWidth={2} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ color: '#001529', fontSize: '1.5rem', fontWeight: '800', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                Rail<span style={{ color: '#FB792B' }}>Setu</span>
+              </div>
+              <Text style={{ fontSize: '0.5rem', color: '#595959', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '600' }}>
+                INDIAN RAILWAY BOOKING & TRAVEL
+              </Text>
             </div>
-            <Text style={{ fontSize: '0.5rem', color: '#595959', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: '600' }}>
-              INDIAN RAILWAY BOOKING & TRAVEL
-            </Text>
           </div>
+        </div>
+
+        {/* Back / Forward Buttons */}
+        <div style={{ display: 'flex', gap: '6px', marginLeft: '12px' }}>
+          <Tooltip title="Go Back">
+            <Button
+              type="text"
+              icon={<ArrowLeft size={18} color="#475569" />}
+              onClick={() => navigate(-1)}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f1f5f9'
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Go Forward">
+            <Button
+              type="text"
+              icon={<ArrowRight size={18} color="#475569" />}
+              onClick={() => navigate(1)}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f1f5f9'
+              }}
+            />
+          </Tooltip>
         </div>
       </div>
 
-      {/* Middle - Search Input matching screenshot */}
-      <div style={{ flex: 1, maxWith: '600px', margin: '0 40px', display: 'flex', justifyContent: 'center' }}>
+      {/* Middle - Search Input */}
+      <div style={{ flex: 1, margin: '0 30px', display: 'flex', justifyContent: 'center' }}>
         <Input 
           size="large"
-          placeholder="Search trains, stations, or destinations..."
-          prefix={<Search size={18} color="#94a3b8" style={{ marginRight: '8px' }} />}
+          placeholder="Search trains, stations, or PNR..."
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          onPressEnter={() => handleGlobalSearch()}
+          prefix={<Search size={18} color="#94a3b8" style={{ marginRight: '8px', cursor: 'pointer' }} onClick={() => handleGlobalSearch()} />}
           style={{
             maxWidth: '520px',
             borderRadius: '24px',

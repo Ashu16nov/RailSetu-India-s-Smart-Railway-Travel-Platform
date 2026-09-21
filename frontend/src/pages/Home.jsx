@@ -20,40 +20,47 @@ const Home = () => {
   const [toStation, setToStation] = useState('');
   const [journeyDate, setJourneyDate] = useState(null);
   const [travelClass, setTravelClass] = useState('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [availableTrains, setAvailableTrains] = useState([]);
+  const [pnrTabInput, setPnrTabInput] = useState('');
+  const [liveTabInput, setLiveTabInput] = useState('');
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
   const handleSearchTrains = (source = fromStation, dest = toStation) => {
-    const src = source || 'New Delhi (NDLS)';
-    const dst = dest || 'Varanasi (BSB)';
-    
-    // Mock available trains matching search
-    setAvailableTrains([
-      { id: '1', trainName: 'Rajdhani Express', trainNumber: '12951', source: src, destination: dst, departureTime: '16:45', arrivalTime: '01:00', duration: '8h 15m', fare: 1450, class: '3AC' },
-      { id: '2', trainName: 'Vande Bharat Express', trainNumber: '20685', source: src, destination: dst, departureTime: '06:00', arrivalTime: '14:00', duration: '8h 00m', fare: 1850, class: 'CC' },
-      { id: '3', trainName: 'Shatabdi Express', trainNumber: '12002', source: src, destination: dst, departureTime: '07:20', arrivalTime: '13:40', duration: '6h 20m', fare: 1210, class: '2AC' }
-    ]);
-    setIsModalOpen(true);
+    const src = source || fromStation || 'New Delhi (NDLS)';
+    const dst = dest || toStation || 'Varanasi (BSB)';
+
+    // Extract station code if present
+    const srcCode = src.includes('(') ? src.match(/\(([^)]+)\)/)?.[1] || 'NDLS' : src.slice(0, 4).toUpperCase();
+    const dstCode = dst.includes('(') ? dst.match(/\(([^)]+)\)/)?.[1] || 'BSB' : dst.slice(0, 4).toUpperCase();
+
+    navigate('/book', {
+      state: {
+        fromCode: srcCode,
+        toCode: dstCode,
+        journeyDate: journeyDate ? journeyDate.format('YYYY-MM-DD') : null,
+        travelClass: travelClass === 'all' ? 'SL' : travelClass
+      }
+    });
   };
 
-  const handleConfirmBooking = (train) => {
-    const newBooking = addBooking({
-      trainName: train.trainName,
-      trainNumber: train.trainNumber,
-      source: train.source,
-      destination: train.destination,
-      journeyDate: journeyDate ? journeyDate.format('DD MMM YYYY') : '18 Sep 2026',
-      journeyTime: train.departureTime,
-      className: train.class,
-      totalFare: train.fare
-    });
+  const handleCheckPNRSubmit = () => {
+    const cleaned = pnrTabInput.trim();
+    if (!cleaned) {
+      message.warning('Please enter a PNR number');
+      return;
+    }
+    navigate(`/pnr?pnr=${cleaned}`);
+  };
 
-    message.success(`Ticket Booked Successfully! PNR: ${newBooking.pnr}`);
-    setIsModalOpen(false);
+  const handleLiveStatusSubmit = () => {
+    const cleaned = liveTabInput.trim();
+    if (!cleaned) {
+      message.warning('Please enter a Train Number or Name');
+      return;
+    }
+    navigate(`/live?train=${encodeURIComponent(cleaned)}`);
   };
 
   const upcoming = bookings.find(b => b.status === 'CONFIRMED') || bookings[0];
@@ -180,15 +187,55 @@ const Home = () => {
                   </div>
                 </div>
               </TabPane>
-              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#8c8c8c' }}><Info size={18}/> Check PNR</span>} key="2" />
-              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#8c8c8c' }}><Calendar size={18}/> Live Train Status</span>} key="3" />
+              
+              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><Info size={18}/> Check PNR</span>} key="2">
+                <div style={{ padding: '20px 24px 30px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                  <Text style={{ display: 'block', color: '#64748b', marginBottom: '16px', fontWeight: '500' }}>
+                    Enter your 10-digit PNR number to get real-time status updates:
+                  </Text>
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                    <Input 
+                      size="large" 
+                      placeholder="e.g. 2457812365" 
+                      value={pnrTabInput}
+                      onChange={(e) => setPnrTabInput(e.target.value)}
+                      onPressEnter={handleCheckPNRSubmit}
+                      style={{ borderRadius: '8px', maxWidth: '350px' }}
+                    />
+                    <Button type="primary" size="large" onClick={handleCheckPNRSubmit} style={{ borderRadius: '8px', fontWeight: '600' }}>
+                      Check PNR Status
+                    </Button>
+                  </div>
+                </div>
+              </TabPane>
+
+              <TabPane tab={<span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}><Calendar size={18}/> Live Train Status</span>} key="3">
+                <div style={{ padding: '20px 24px 30px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                  <Text style={{ display: 'block', color: '#64748b', marginBottom: '16px', fontWeight: '500' }}>
+                    Enter Train Number or Name to track live running status:
+                  </Text>
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                    <Input 
+                      size="large" 
+                      placeholder="e.g. 12650 or Kashi Express" 
+                      value={liveTabInput}
+                      onChange={(e) => setLiveTabInput(e.target.value)}
+                      onPressEnter={handleLiveStatusSubmit}
+                      style={{ borderRadius: '8px', maxWidth: '350px' }}
+                    />
+                    <Button type="primary" size="large" onClick={handleLiveStatusSubmit} style={{ borderRadius: '8px', fontWeight: '600' }}>
+                      Track Live Status
+                    </Button>
+                  </div>
+                </div>
+              </TabPane>
             </Tabs>
           </Card>
 
           {/* Popular Routes */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
             <Title level={4} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Popular Routes</Title>
-            <Button type="link" style={{ padding: 0, fontWeight: '600' }}>View All &rarr;</Button>
+            <Button type="link" onClick={() => navigate('/book')} style={{ padding: 0, fontWeight: '600' }}>View All &rarr;</Button>
           </div>
           
           <Row gutter={16} style={{ marginBottom: '24px' }}>
@@ -242,7 +289,11 @@ const Home = () => {
           {/* Upcoming Journey Section (Dynamic) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
             <Title level={5} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Upcoming Journey</Title>
-            {upcoming && <Button type="link" style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>View Details &rarr;</Button>}
+            {upcoming && (
+              <Button type="link" onClick={() => navigate('/my-bookings')} style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>
+                View Details &rarr;
+              </Button>
+            )}
           </div>
 
           {upcoming ? (
@@ -264,7 +315,7 @@ const Home = () => {
                 </div>
               </div>
               <Divider style={{ margin: '16px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div>
                   <Text style={{ color: '#8c8c8c', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Coach</Text>
                   <Text style={{ fontWeight: '700', color: '#262626' }}>{upcoming.coach || 'B3'}</Text>
@@ -277,6 +328,24 @@ const Home = () => {
                   <Text style={{ color: '#8c8c8c', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Status</Text>
                   <Text style={{ fontWeight: '700', color: '#52c41a' }}>{upcoming.status || 'Confirmed'}</Text>
                 </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button 
+                  size="small" 
+                  type="primary" 
+                  ghost 
+                  onClick={() => navigate(`/pnr?pnr=${upcoming.pnr}`)}
+                  style={{ flex: 1, borderRadius: '6px', fontSize: '0.75rem' }}
+                >
+                  Check PNR
+                </Button>
+                <Button 
+                  size="small" 
+                  onClick={() => navigate(`/live?train=${upcoming.trainNumber}`)}
+                  style={{ flex: 1, borderRadius: '6px', fontSize: '0.75rem' }}
+                >
+                  Live Status
+                </Button>
               </div>
             </Card>
           ) : (
@@ -303,13 +372,31 @@ const Home = () => {
           {/* Recent Bookings Section (Dynamic) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
             <Title level={5} style={{ margin: 0, fontWeight: '700', color: '#00234b' }}>Recent Bookings</Title>
-            {bookings.length > 0 && <Button type="link" style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>View All &rarr;</Button>}
+            {bookings.length > 0 && (
+              <Button type="link" onClick={() => navigate('/my-bookings')} style={{ padding: 0, fontWeight: '600', fontSize: '0.8rem' }}>
+                View All &rarr;
+              </Button>
+            )}
           </div>
 
           {bookings.length > 0 ? (
             <Card style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px', border: 'none' }} bodyStyle={{ padding: '0' }}>
               {bookings.slice(0, 3).map((item, i) => (
-                <div key={item._id || i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: i < Math.min(bookings.length, 3) - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                <div 
+                  key={item._id || i} 
+                  onClick={() => navigate(`/pnr?pnr=${item.pnr}`)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    padding: '16px 20px', 
+                    borderBottom: i < Math.min(bookings.length, 3) - 1 ? '1px solid #f0f0f0' : 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <div style={{ background: '#f0f5ff', padding: '8px', borderRadius: '8px', color: '#1890ff' }}>
                     <Train size={16} />
                   </div>

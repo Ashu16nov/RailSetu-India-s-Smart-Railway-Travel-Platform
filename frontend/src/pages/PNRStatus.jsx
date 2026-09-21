@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Button, Typography, Row, Col, Tag, Table, Spin, message } from 'antd';
+import { Card, Input, Button, Typography, Row, Col, Tag, Table, Spin, message, Popconfirm } from 'antd';
 import { 
   Search, 
   Train, 
@@ -12,36 +12,28 @@ import {
   Lightbulb, 
   Headphones, 
   ArrowRight,
-  MapPin
+  MapPin,
+  XCircle,
+  Eye
 } from 'lucide-react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import useBookingStore from '../store/useBookingStore';
 
 const { Title, Text } = Typography;
 
 const PNRStatus = () => {
-  const getBookingByPNR = useBookingStore((state) => state.getBookingByPNR);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   
-  const [pnrInput, setPnrInput] = useState('2457812365');
+  const getBookingByPNR = useBookingStore((state) => state.getBookingByPNR);
+  const cancelBookingStore = useBookingStore((state) => state.cancelBooking);
+  const bookings = useBookingStore((state) => state.bookings);
+  
+  const initialPNR = searchParams.get('pnr') || location.state?.pnr || '2457812365';
+  const [pnrInput, setPnrInput] = useState(initialPNR);
   const [loading, setLoading] = useState(false);
   const [pnrResult, setPnrResult] = useState(null);
-
-  useEffect(() => {
-    // Initial load with sample PNR matching screenshot
-    handleCheckPNR('2457812365');
-  }, []);
-
-  const getStatusBannerInfo = (status) => {
-    if (!status) return { bg: '#f6ffed', border: '#b7eb8f', iconBg: '#52c41a', color: '#52c41a', msg: 'Your ticket is confirmed. Happy Journey!' };
-    const upper = status.toUpperCase();
-    if (upper.includes('RAC')) {
-      return { bg: '#fffbe6', border: '#ffe58f', iconBg: '#fa8c16', color: '#d46b08', msg: 'Your ticket is in RAC state. Seats will be allocated during charting.' };
-    } else if (upper.includes('WAIT') || upper.includes('WL')) {
-      return { bg: '#fff2e8', border: '#ffbb96', iconBg: '#ff4d4f', color: '#d4380d', msg: 'Your ticket is in Waiting List. Please check before departure.' };
-    } else if (upper.includes('CAN')) {
-      return { bg: '#f5f5f5', border: '#d9d9d9', iconBg: '#8c8c8c', color: '#595959', msg: 'This ticket booking has been cancelled.' };
-    }
-    return { bg: '#f6ffed', border: '#b7eb8f', iconBg: '#52c41a', color: '#52c41a', msg: 'Your ticket is confirmed. Happy Journey!' };
-  };
 
   const handleCheckPNR = (pnrToSearch = pnrInput) => {
     const cleanedPNR = (pnrToSearch || '').trim();
@@ -61,8 +53,15 @@ const PNRStatus = () => {
         message.error('No record found for the entered PNR number');
       }
       setLoading(false);
-    }, 350);
+    }, 300);
   };
+
+  useEffect(() => {
+    const pnrParam = searchParams.get('pnr') || location.state?.pnr;
+    const targetPNR = pnrParam || '2457812365';
+    setPnrInput(targetPNR);
+    handleCheckPNR(targetPNR);
+  }, [searchParams, location.state]);
 
   const passengerColumns = [
     {
@@ -257,7 +256,20 @@ const PNRStatus = () => {
             </div>
 
             <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <Text type="secondary" style={{ fontSize: '0.8rem', fontWeight: '600' }}>Sample PNRs:</Text>
+              <Text type="secondary" style={{ fontSize: '0.8rem', fontWeight: '600' }}>Your & Sample PNRs:</Text>
+              {bookings && bookings.length > 0 && bookings.slice(0, 3).map((b) => (
+                <Tag
+                  key={b.pnr}
+                  color="green"
+                  style={{ cursor: 'pointer', borderRadius: '6px', padding: '2px 10px', fontWeight: '600' }}
+                  onClick={() => {
+                    setPnrInput(b.pnr);
+                    handleCheckPNR(b.pnr);
+                  }}
+                >
+                  {b.pnr} ({b.trainName})
+                </Tag>
+              ))}
               {[
                 { pnr: '2457812365', label: '2457812365 (Confirmed)' },
                 { pnr: '8549120364', label: '8549120364 (RAC)' },
@@ -487,6 +499,45 @@ const PNRStatus = () => {
                   pagination={false}
                   style={{ borderRadius: '10px', overflow: 'hidden' }}
                 />
+
+                <div style={{ marginTop: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <Button 
+                    type="primary" 
+                    icon={<Train size={16} />}
+                    onClick={() => navigate(`/live?train=${pnrResult.trainNumber}`)}
+                    style={{ borderRadius: '8px', fontWeight: '600' }}
+                  >
+                    Track Live Train Status
+                  </Button>
+                  <Button 
+                    icon={<Eye size={16} />}
+                    onClick={() => navigate('/my-bookings')}
+                    style={{ borderRadius: '8px', fontWeight: '600' }}
+                  >
+                    View in My Bookings
+                  </Button>
+                  {pnrResult.status !== 'Cancelled' && pnrResult.status !== 'CANCELLED' && (
+                    <Popconfirm
+                      title="Cancel Ticket"
+                      description="Are you sure you want to cancel this ticket?"
+                      onConfirm={() => {
+                        cancelBookingStore(pnrResult.pnr);
+                        message.info('Ticket cancelled successfully');
+                        handleCheckPNR(pnrResult.pnr);
+                      }}
+                      okText="Yes, Cancel"
+                      cancelText="No"
+                    >
+                      <Button 
+                        danger 
+                        icon={<XCircle size={16} />}
+                        style={{ borderRadius: '8px', fontWeight: '600', marginLeft: 'auto' }}
+                      >
+                        Cancel Ticket
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </div>
               </Card>
 
               {/* Bottom Blue Info Alert Banner */}

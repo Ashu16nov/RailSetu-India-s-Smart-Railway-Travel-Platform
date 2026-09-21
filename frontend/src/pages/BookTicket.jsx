@@ -34,9 +34,10 @@ import {
   Shield,
   Ticket
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useBookingStore from '../store/useBookingStore';
+import useAuthStore from '../store/useAuthStore';
 
 const { Title, Text } = Typography;
 
@@ -203,14 +204,29 @@ const getMatchingTrains = (srcCode, srcCity, dstCode, dstCity, classFilter) => {
 
 const BookTicket = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const addBooking = useBookingStore(state => state.addBooking);
+  const user = useAuthStore(state => state.user);
 
-  // Search parameters state
-  const [fromCode, setFromCode] = useState('NDLS');
-  const [toCode, setToCode] = useState('BSB');
-  const [journeyDate, setJourneyDate] = useState(dayjs('2025-09-20'));
-  const [selectedClassFilter, setSelectedClassFilter] = useState('SL');
+  // Search parameters state initialized with location state if available
+  const initialFrom = location.state?.fromCode || 'NDLS';
+  const initialTo = location.state?.toCode || 'BSB';
+  const initialDate = location.state?.journeyDate ? dayjs(location.state.journeyDate) : dayjs('2025-09-20');
+  const initialClass = location.state?.travelClass || 'SL';
+
+  const [fromCode, setFromCode] = useState(initialFrom);
+  const [toCode, setToCode] = useState(initialTo);
+  const [journeyDate, setJourneyDate] = useState(initialDate);
+  const [selectedClassFilter, setSelectedClassFilter] = useState(initialClass);
   const [sortBy, setSortBy] = useState('departure');
+
+  // React to location state updates
+  useEffect(() => {
+    if (location.state?.fromCode) setFromCode(location.state.fromCode);
+    if (location.state?.toCode) setToCode(location.state.toCode);
+    if (location.state?.journeyDate) setJourneyDate(dayjs(location.state.journeyDate));
+    if (location.state?.travelClass) setSelectedClassFilter(location.state.travelClass);
+  }, [location.state]);
 
   // Selected train and class overrides
   const [selectedTrainId, setSelectedTrainId] = useState(null);
@@ -242,14 +258,23 @@ const BookTicket = () => {
 
   const currentFare = selectedTrain?.fares?.[selectedClass] || 285;
 
-  // Passenger Form State
-  const [passengerName, setPassengerName] = useState('');
-  const [passengerAge, setPassengerAge] = useState('');
-  const [passengerGender, setPassengerGender] = useState(undefined);
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [emailId, setEmailId] = useState('');
+  // Passenger Form State - dynamically synchronized with user profile
+  const [passengerName, setPassengerName] = useState(user?.name || '');
+  const [passengerAge, setPassengerAge] = useState('26');
+  const [passengerGender, setPassengerGender] = useState(user?.gender || 'Male');
+  const [mobileNumber, setMobileNumber] = useState(user?.phone || '');
+  const [emailId, setEmailId] = useState(user?.email || '');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [agreedTerms, setAgreedTerms] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      if (!passengerName) setPassengerName(user.name || '');
+      if (!mobileNumber) setMobileNumber(user.phone || '');
+      if (!emailId) setEmailId(user.email || '');
+      if (!passengerGender) setPassengerGender(user.gender || 'Male');
+    }
+  }, [user]);
 
   // Success Modal State
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -1045,15 +1070,32 @@ const BookTicket = () => {
             </div>
           </div>
 
-          <Button 
-            type="primary" 
-            block
-            size="large"
-            onClick={() => { setIsSuccessModalOpen(false); navigate('/'); }}
-            style={{ borderRadius: '10px', height: '44px', fontWeight: '700', backgroundColor: '#0d47a1' }}
-          >
-            Go to Dashboard Overview
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Button 
+                type="primary"
+                style={{ flex: 1, borderRadius: '8px', fontWeight: '600' }}
+                onClick={() => { setIsSuccessModalOpen(false); navigate(`/pnr?pnr=${latestBooking?.pnr}`); }}
+              >
+                Check PNR Status
+              </Button>
+              <Button 
+                style={{ flex: 1, borderRadius: '8px', fontWeight: '600' }}
+                onClick={() => { setIsSuccessModalOpen(false); navigate(`/live?train=${latestBooking?.trainNumber}`); }}
+              >
+                Track Live Status
+              </Button>
+            </div>
+            <Button 
+              type="default" 
+              block
+              size="large"
+              onClick={() => { setIsSuccessModalOpen(false); navigate('/my-bookings'); }}
+              style={{ borderRadius: '10px', height: '42px', fontWeight: '700', backgroundColor: '#f0f5ff', color: '#1890ff', border: '1px solid #adc6ff' }}
+            >
+              View in My Bookings
+            </Button>
+          </div>
         </div>
       </Modal>
 

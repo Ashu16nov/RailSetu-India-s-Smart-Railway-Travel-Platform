@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Input, 
@@ -23,8 +23,11 @@ import {
   MapPin, 
   Calendar,
   Layers,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Ticket
 } from 'lucide-react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import useBookingStore from '../store/useBookingStore';
 
 const { Title, Text } = Typography;
 
@@ -113,8 +116,14 @@ const MOCK_TRAIN_DATA = {
 };
 
 const LiveStatus = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const bookings = useBookingStore((state) => state.bookings);
+
+  const initialTrain = searchParams.get('train') || location.state?.train || '12650';
   const [searchMode, setSearchMode] = useState('number');
-  const [trainInput, setTrainInput] = useState('12650');
+  const [trainInput, setTrainInput] = useState(initialTrain);
   const [activeSubTab, setActiveSubTab] = useState('live');
   const [loading, setLoading] = useState(false);
   const [currentTrain, setCurrentTrain] = useState(MOCK_TRAIN_DATA['12650']);
@@ -166,6 +175,16 @@ const LiveStatus = () => {
       setLastRefreshed(new Date().toLocaleTimeString());
     }, 350);
   };
+
+  useEffect(() => {
+    const trainParam = searchParams.get('train') || location.state?.train;
+    if (trainParam) {
+      setTrainInput(trainParam);
+      handleSearch(trainParam);
+    } else {
+      handleSearch('12650');
+    }
+  }, [searchParams, location.state]);
 
   const handleRefresh = () => {
     setLoading(true);
@@ -302,7 +321,20 @@ const LiveStatus = () => {
         </div>
 
         <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <Text type="secondary" style={{ fontSize: '0.8rem', fontWeight: '600' }}>Quick Trains:</Text>
+          <Text type="secondary" style={{ fontSize: '0.8rem', fontWeight: '600' }}>Your & Quick Trains:</Text>
+          {bookings && bookings.length > 0 && bookings.slice(0, 3).map((b) => (
+            <Tag 
+              key={b._id || b.trainNumber} 
+              color="green" 
+              style={{ cursor: 'pointer', borderRadius: '6px', padding: '2px 10px', fontWeight: '600' }}
+              onClick={() => {
+                setTrainInput(b.trainNumber);
+                handleSearch(b.trainNumber);
+              }}
+            >
+              {b.trainNumber} - {b.trainName}
+            </Tag>
+          ))}
           {[
             { num: '12650', label: '12650 - Kashi Express' },
             { num: '12951', label: '12951 - Mumbai Rajdhani' },
@@ -386,11 +418,21 @@ const LiveStatus = () => {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block' }}>Last Updated</Text>
-                <Text strong style={{ fontSize: '0.9rem', color: '#334155' }}>
-                  {currentTrain.lastUpdated}
-                </Text>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Button 
+                  type="primary"
+                  icon={<Ticket size={16} />}
+                  onClick={() => navigate('/book', { state: { search: currentTrain.number } })}
+                  style={{ borderRadius: '8px', fontWeight: '600' }}
+                >
+                  Book This Train
+                </Button>
+                <Button 
+                  onClick={() => navigate('/pnr')}
+                  style={{ borderRadius: '8px', fontWeight: '600' }}
+                >
+                  Check PNR
+                </Button>
               </div>
             </div>
 
