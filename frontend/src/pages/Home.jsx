@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Typography, Tabs, Input, Select, DatePicker, Checkbox, Button, Divider, Modal, Form, message, Tag } from 'antd';
+import { Row, Col, Card, Typography, Tabs, Input, Select, DatePicker, Checkbox, Button, Divider, Modal, Form, message, Tag, AutoComplete } from 'antd';
 import { SwapOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Train, Calendar, Info, MapPin, Coffee, HelpCircle, Shield, Umbrella, Ticket, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useBookingStore from '../store/useBookingStore';
+import { INDIAN_STATIONS, searchStations } from '../utils/railwayData';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -23,22 +24,42 @@ const Home = () => {
   const [pnrTabInput, setPnrTabInput] = useState('');
   const [liveTabInput, setLiveTabInput] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [availableTrains, setAvailableTrains] = useState([
-    { id: '12561', trainNumber: '12561', trainName: 'Swatantrata Senani Express', source: 'New Delhi (NDLS)', destination: 'Varanasi (BSB)', departureTime: '21:15', arrivalTime: '05:30', duration: '8h 15m', class: '3AC', fare: 1210 },
-    { id: '12951', trainNumber: '12951', trainName: 'Rajdhani Express', source: 'New Delhi (NDLS)', destination: 'Mumbai Central (MMCT)', departureTime: '16:55', arrivalTime: '08:35', duration: '15h 40m', class: '2AC', fare: 2450 },
-    { id: '20685', trainNumber: '20685', trainName: 'Vande Bharat Express', source: 'Chennai Central (MAS)', destination: 'KSR Bengaluru (SBC)', departureTime: '05:50', arrivalTime: '10:15', duration: '4h 25m', class: 'CC', fare: 980 }
-  ]);
 
-  useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
+  const getStationOptions = (query) => {
+    const matches = searchStations(query || '');
+    const list = matches.length > 0 ? matches : INDIAN_STATIONS.slice(0, 15);
+    return list.map(st => ({
+      value: `${st.name} (${st.code})`,
+      label: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span><strong>{st.name}</strong> <span style={{ color: '#1890ff', fontSize: '0.8rem' }}>({st.code})</span></span>
+          <span style={{ fontSize: '0.75rem', color: '#8c8c8c' }}>{st.state}</span>
+        </div>
+      )
+    }));
+  };
 
   const handleSearchTrains = (source = fromStation, dest = toStation) => {
-    const src = source || fromStation || 'New Delhi (NDLS)';
-    const dst = dest || toStation || 'Varanasi (BSB)';
+    const src = source || fromStation || 'Patna Junction (PNBE)';
+    const dst = dest || toStation || 'New Delhi (NDLS)';
 
-    const srcCode = src.includes('(') ? src.match(/\(([^)]+)\)/)?.[1] || 'NDLS' : src.slice(0, 4).toUpperCase();
-    const dstCode = dst.includes('(') ? dst.match(/\(([^)]+)\)/)?.[1] || 'BSB' : dst.slice(0, 4).toUpperCase();
+    let srcCode = 'PNBE';
+    if (src.includes('(') && src.includes(')')) {
+      srcCode = src.match(/\(([^)]+)\)/)?.[1] || 'PNBE';
+    } else {
+      const match = INDIAN_STATIONS.find(s => s.name.toLowerCase().includes(src.toLowerCase()) || s.city.toLowerCase().includes(src.toLowerCase()) || s.code.toLowerCase() === src.toLowerCase());
+      if (match) srcCode = match.code;
+      else srcCode = src.trim().toUpperCase().slice(0, 4);
+    }
+
+    let dstCode = 'NDLS';
+    if (dst.includes('(') && dst.includes(')')) {
+      dstCode = dst.match(/\(([^)]+)\)/)?.[1] || 'NDLS';
+    } else {
+      const match = INDIAN_STATIONS.find(s => s.name.toLowerCase().includes(dest.toLowerCase()) || s.city.toLowerCase().includes(dest.toLowerCase()) || s.code.toLowerCase() === dest.toLowerCase());
+      if (match) dstCode = match.code;
+      else dstCode = dest.trim().toUpperCase().slice(0, 4);
+    }
 
     navigate('/book', {
       state: {
@@ -135,13 +156,13 @@ const Home = () => {
                   <Row gutter={16} align="middle">
                     <Col span={9}>
                       <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>From</Text></div>
-                      <Input 
-                        size="large" 
+                      <AutoComplete
+                        size="large"
                         value={fromStation}
-                        onChange={(e) => setFromStation(e.target.value)}
-                        prefix={<MapPin size={16} color="#bfbfbf" style={{ marginRight: '8px' }}/>} 
-                        placeholder="Enter departure station" 
-                        style={{ borderRadius: '8px' }} 
+                        onChange={(v) => setFromStation(v)}
+                        options={getStationOptions(fromStation)}
+                        placeholder="Search departure station or city (e.g. Patna, NDLS)"
+                        style={{ width: '100%', borderRadius: '8px' }}
                       />
                     </Col>
                     <Col span={2} style={{ display: 'flex', justifyContent: 'center', marginTop: '25px' }}>
@@ -156,13 +177,13 @@ const Home = () => {
                       <Row gutter={16}>
                         <Col span={9}>
                           <div style={{ marginBottom: '8px' }}><Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>To</Text></div>
-                          <Input 
-                            size="large" 
+                          <AutoComplete
+                            size="large"
                             value={toStation}
-                            onChange={(e) => setToStation(e.target.value)}
-                            prefix={<MapPin size={16} color="#bfbfbf" style={{ marginRight: '8px' }}/>} 
-                            placeholder="Enter destination station" 
-                            style={{ borderRadius: '8px' }} 
+                            onChange={(v) => setToStation(v)}
+                            options={getStationOptions(toStation)}
+                            placeholder="Search destination station or city (e.g. Delhi, BSB)"
+                            style={{ width: '100%', borderRadius: '8px' }}
                           />
                         </Col>
                         <Col span={8}>

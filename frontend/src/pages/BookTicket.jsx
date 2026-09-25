@@ -14,7 +14,8 @@ import {
   Tag, 
   Modal, 
   Form, 
-  message 
+  message,
+  AutoComplete
 } from 'antd';
 import { SwapOutlined, SearchOutlined, CheckCircleOutlined, DownOutlined } from '@ant-design/icons';
 import { 
@@ -38,6 +39,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useBookingStore from '../store/useBookingStore';
 import useAuthStore from '../store/useAuthStore';
+import { INDIAN_STATIONS, searchStations, findTrainsForRoute, calculateSeatAvailability } from '../utils/railwayData';
 
 const { Title, Text } = Typography;
 
@@ -228,18 +230,36 @@ const BookTicket = () => {
     if (location.state?.travelClass) setSelectedClassFilter(location.state.travelClass);
   }, [location.state]);
 
+  const getStationOptions = (query) => {
+    const matches = searchStations(query || '');
+    const list = matches.length > 0 ? matches : INDIAN_STATIONS.slice(0, 15);
+    return list.map(st => ({
+      value: st.code,
+      label: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span><strong>{st.name}</strong> <span style={{ color: '#1890ff', fontSize: '0.8rem' }}>({st.code})</span></span>
+          <span style={{ fontSize: '0.75rem', color: '#8c8c8c' }}>{st.city}, {st.state}</span>
+        </div>
+      )
+    }));
+  };
+
   // Selected train and class overrides
   const [selectedTrainId, setSelectedTrainId] = useState(null);
   const [selectedClassOverride, setSelectedClassOverride] = useState(null);
 
   // Derived station cities
-  const fromCity = stationCityMap[fromCode] || (fromCode ? `${fromCode} City` : 'New Delhi');
-  const toCity = stationCityMap[toCode] || (toCode ? `${toCode} City` : 'Varanasi Junction');
+  const fromStationObj = INDIAN_STATIONS.find(s => s.code === fromCode || s.name.toUpperCase().includes(fromCode) || s.city.toUpperCase().includes(fromCode));
+  const toStationObj = INDIAN_STATIONS.find(s => s.code === toCode || s.name.toUpperCase().includes(toCode) || s.city.toUpperCase().includes(toCode));
 
-  // Pure derived matching trains list (zero useEffect loop risk!)
+  const fromCity = fromStationObj ? `${fromStationObj.name} (${fromStationObj.code})` : (stationCityMap[fromCode] || `${fromCode} City`);
+  const toCity = toStationObj ? `${toStationObj.name} (${toStationObj.code})` : (stationCityMap[toCode] || `${toCode} City`);
+
+  // Pure derived matching trains list with real seat availability
   const displayedTrains = useMemo(() => {
-    return getMatchingTrains(fromCode, fromCity, toCode, toCity, selectedClassFilter);
-  }, [fromCode, fromCity, toCode, toCity, selectedClassFilter]);
+    const dateStr = journeyDate ? journeyDate.format('YYYY-MM-DD') : '2025-09-20';
+    return findTrainsForRoute(fromCode, toCode, dateStr, selectedClassFilter);
+  }, [fromCode, toCode, journeyDate, selectedClassFilter]);
 
   // Pure derived selected train and class
   const selectedTrain = useMemo(() => {
@@ -247,16 +267,34 @@ const BookTicket = () => {
   }, [displayedTrains, selectedTrainId]);
 
   const selectedClass = useMemo(() => {
-    if (selectedClassOverride && selectedTrain?.fares?.[selectedClassOverride]) {
+    if (selectedClassOverride && (selectedTrain?.fares?.[selectedClassOverride] || selectedTrain?.fareDetails?.[selectedClassOverride])) {
       return selectedClassOverride;
     }
-    if (selectedTrain?.fares?.[selectedClassFilter]) {
+    if (selectedClassFilter && selectedClassFilter !== 'all' && (selectedTrain?.fares?.[selectedClassFilter] || selectedTrain?.fareDetails?.[selectedClassFilter])) {
       return selectedClassFilter;
+    }
+    if (selectedTrain?.fareDetails) {
+      return Object.keys(selectedTrain.fareDetails)[0];
     }
     return selectedTrain?.fares ? Object.keys(selectedTrain.fares)[0] : 'SL';
   }, [selectedTrain, selectedClassFilter, selectedClassOverride]);
 
-  const currentFare = selectedTrain?.fares?.[selectedClass] || 285;
+  const currentFare = useMemo(() => {
+    if (!selectedTrain) return 385;
+    if (selectedTrain.fareDetails && selectedTrain.fareDetails[selectedClass]) {
+      return selectedTrain.fareDetails[selectedClass].price;
+    }
+    if (selectedTrain.fares && selectedTrain.fares[selectedClass]) {
+      return selectedTrain.fares[selectedClass];
+    }
+    return 385;
+  }, [selectedTrain, selectedClass]);
+
+  const selectedSeatStatus = useMemo(() => {
+    if (!selectedTrain || !selectedClass) return null;
+    const dateStr = journeyDate ? journeyDate.format('YYYY-MM-DD') : '2025-09-20';
+    return calculateSeatAvailability(selectedTrain.trainNumber, selectedClass, dateStr);
+  }, [selectedTrain, selectedClass, journeyDate]);
 
   // Passenger Form State - dynamically synchronized with user profile
   const [passengerName, setPassengerName] = useState(user?.name || '');
@@ -403,14 +441,14 @@ const BookTicket = () => {
                 {/* From Station */}
                 <Col xs={24} sm={12} md={6} lg={6}>
                   <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>From</div>
-                  <Input 
-                    prefix={<MapPin size={16} color="#0d47a1" style={{ marginRight: '6px' }} />}
+                  <AutoComplete
                     value={fromCode}
-                    onChange={(e) => setFromCode(e.target.value.toUpperCase())}
-                    placeholder="Station Code / City"
-                    style={{ borderRadius: '8px', fontWeight: '700', fontSize: '0.95rem', height: '42px', backgroundColor: '#f8fafc' }}
+                    onChange={(v) => setFromCode(v.toUpperCase())}
+                    options={getStationOptions(fromCode)}
+                    placeholder="Departure Station (e.g. PNBE, Patna)"
+                    style={{ width: '100%', height: '42px' }}
                   />
-                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '24px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{fromCity}</Text>
+                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '4px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{fromCity}</Text>
                 </Col>
 
                 {/* Swap Button */}
@@ -439,14 +477,14 @@ const BookTicket = () => {
                 {/* To Station */}
                 <Col xs={24} sm={10} md={5} lg={5}>
                   <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>To</div>
-                  <Input 
-                    prefix={<MapPin size={16} color="#0d47a1" style={{ marginRight: '6px' }} />}
+                  <AutoComplete
                     value={toCode}
-                    onChange={(e) => setToCode(e.target.value.toUpperCase())}
-                    placeholder="Station Code / City"
-                    style={{ borderRadius: '8px', fontWeight: '700', fontSize: '0.95rem', height: '42px', backgroundColor: '#f8fafc' }}
+                    onChange={(v) => setToCode(v.toUpperCase())}
+                    options={getStationOptions(toCode)}
+                    placeholder="Destination Station (e.g. NDLS, Delhi)"
+                    style={{ width: '100%', height: '42px' }}
                   />
-                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '24px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{toCity}</Text>
+                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '4px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{toCity}</Text>
                 </Col>
 
                 {/* Date of Journey */}
@@ -640,10 +678,13 @@ const BookTicket = () => {
 
                       {/* Card Bottom: Class Fare Option Pills & Book Button */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <Text style={{ fontSize: '0.8rem', color: '#8c8c8c', fontWeight: '600', marginRight: '4px' }}>Available Fares:</Text>
-                          {Object.entries(train.fares).map(([cls, price]) => {
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <Text style={{ fontSize: '0.8rem', color: '#8c8c8c', fontWeight: '600', marginRight: '2px' }}>Fares & Seats:</Text>
+                          {(train.fareDetails ? Object.entries(train.fareDetails) : Object.entries(train.fares || {}).map(([k, v]) => [k, { price: v, availability: calculateSeatAvailability(train.trainNumber, k, journeyDate ? journeyDate.format('YYYY-MM-DD') : '2025-09-20') }])).map(([cls, details]) => {
                             const isSelected = isCurrentTrainSelected && selectedClass === cls;
+                            const price = details.price || details;
+                            const avail = details.availability || calculateSeatAvailability(train.trainNumber, cls, journeyDate ? journeyDate.format('YYYY-MM-DD') : '2025-09-20');
+
                             return (
                               <div
                                 key={cls}
@@ -652,24 +693,38 @@ const BookTicket = () => {
                                   handleSelectTrain(train, cls);
                                 }}
                                 style={{
-                                  padding: '8px 16px',
+                                  padding: '8px 12px',
                                   borderRadius: '10px',
                                   border: isSelected ? '2px solid #1890ff' : '1px solid #e8e8e8',
                                   backgroundColor: isSelected ? '#e6f7ff' : '#ffffff',
                                   cursor: 'pointer',
                                   textAlign: 'center',
-                                  minWidth: '76px',
+                                  minWidth: '105px',
                                   whiteSpace: 'nowrap',
                                   transition: 'all 0.2s ease',
                                   boxShadow: isSelected ? '0 2px 8px rgba(24, 144, 255, 0.15)' : 'none'
                                 }}
                               >
-                                <Text style={{ fontSize: '0.75rem', color: isSelected ? '#1890ff' : '#595959', fontWeight: '700', display: 'block', lineHeight: 1.2 }}>
-                                  {cls}
-                                </Text>
-                                <Text style={{ fontSize: '0.9rem', color: isSelected ? '#1890ff' : '#00234b', fontWeight: '800', display: 'block', lineHeight: 1.2, marginTop: '2px' }}>
-                                  ₹ {price}
-                                </Text>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: '0.75rem', color: isSelected ? '#1890ff' : '#595959', fontWeight: '700', lineHeight: 1.2 }}>
+                                    {cls}
+                                  </Text>
+                                  <Text style={{ fontSize: '0.85rem', color: isSelected ? '#1890ff' : '#00234b', fontWeight: '800', lineHeight: 1.2 }}>
+                                    ₹ {price}
+                                  </Text>
+                                </div>
+                                <div style={{ 
+                                  fontSize: '0.65rem', 
+                                  fontWeight: '700', 
+                                  marginTop: '4px',
+                                  padding: '2px 4px', 
+                                  borderRadius: '4px',
+                                  backgroundColor: avail.badgeBg || '#e6f4ea',
+                                  color: avail.badgeText || '#137333',
+                                  border: `1px solid ${avail.badgeText}33`
+                                }}>
+                                  {avail.text}
+                                </div>
                               </div>
                             );
                           })}
@@ -820,8 +875,19 @@ const BookTicket = () => {
                   <Text style={{ fontWeight: '800', color: '#00234b', fontSize: '1.1rem' }}>{selectedTrain.arrivalTime}</Text>
                 </div>
                 <Text style={{ fontSize: '0.75rem', color: '#595959', display: 'block', marginTop: '8px', fontWeight: '500' }}>
-                  📅 {journeyDate ? journeyDate.format('DD Sep YYYY') : '20 Sep 2025'}
+                  📅 {journeyDate ? journeyDate.format('DD MMM YYYY') : '20 Sep 2025'}
                 </Text>
+
+                {selectedSeatStatus && (
+                  <div style={{ marginTop: '12px', padding: '8px 12px', borderRadius: '8px', backgroundColor: selectedSeatStatus.badgeBg, border: `1px solid ${selectedSeatStatus.badgeText}44`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: '0.75rem', fontWeight: '700', color: selectedSeatStatus.badgeText }}>
+                      Seat Status ({selectedClass}):
+                    </Text>
+                    <Tag color={selectedSeatStatus.color} style={{ margin: 0, fontWeight: '800' }}>
+                      {selectedSeatStatus.text}
+                    </Tag>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -837,12 +903,12 @@ const BookTicket = () => {
               </Title>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <Text style={{ color: '#595959', fontSize: '0.9rem', fontWeight: '600' }}>1 Passenger</Text>
+                <Text style={{ color: '#595959', fontSize: '0.9rem', fontWeight: '600' }}>1 Passenger ({selectedClass})</Text>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <Text style={{ color: '#8c8c8c', fontSize: '0.85rem' }}>
-                  {selectedClass === 'SL' ? 'Sleeper (SL)' : selectedClass === '3A' ? 'AC 3 Tier (3A)' : 'AC 2 Tier (2A)'}
+                  Base Ticket Fare
                 </Text>
                 <Text style={{ fontWeight: '700', color: '#262626', fontSize: '0.9rem' }}>₹ {currentFare}</Text>
               </div>
