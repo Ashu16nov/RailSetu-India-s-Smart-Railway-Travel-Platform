@@ -33,6 +33,9 @@ const Sidebar = () => {
     ...(user ? [
       { key: '/profile', icon: <User size={18} />, label: 'My Profile' }
     ] : []),
+    ...(user && user.role === 'admin' ? [
+      { key: '/admin', icon: <Train size={18} color="#fbbf24" />, label: '👑 Admin Control' }
+    ] : []),
     { key: '/settings', icon: <Settings size={18} />, label: 'Settings' },
     ...(user ? [
       { 

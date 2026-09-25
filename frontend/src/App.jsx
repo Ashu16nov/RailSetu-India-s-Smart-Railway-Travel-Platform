@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
+import AdminLayout from './components/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -10,22 +11,27 @@ import PNRStatus from './pages/PNRStatus';
 import Settings from './pages/Settings';
 import LiveStatus from './pages/LiveStatus';
 import MyBookings from './pages/MyBookings';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminTrains from './pages/admin/AdminTrains';
+import AdminBookings from './pages/admin/AdminBookings';
+import AdminUsers from './pages/admin/AdminUsers';
 import useAuthStore from './store/useAuthStore';
 
-// Separate layout for authentication pages vs protected dashboard pages
+// Separate layout for auth, admin, and protected user dashboard pages
 const AppContainer = ({ children }) => {
   const location = useLocation();
   const user = useAuthStore(state => state.user);
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   // If user is not logged in and trying to access protected pages, redirect to login
   if (!user && !isAuthPage) {
     return <Navigate to="/login" replace />;
   }
 
-  // If user is already logged in and on login/register page, redirect to Home
+  // If user is already logged in and on login/register page, redirect based on role
   if (user && isAuthPage) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace />;
   }
 
   if (isAuthPage) {
@@ -36,7 +42,12 @@ const AppContainer = ({ children }) => {
     );
   }
 
-  // Dashboard pages use the DashboardLayout
+  // Admin Portal pages use the dedicated AdminLayout
+  if (isAdminPage) {
+    return <AdminLayout>{children}</AdminLayout>;
+  }
+
+  // User Dashboard pages use the DashboardLayout
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
@@ -57,6 +68,15 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Dedicated Admin Module Routes */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/trains" element={<AdminTrains />} />
+          <Route path="/admin/bookings" element={<AdminBookings />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/notices" element={<AdminDashboard />} />
+          <Route path="/admin/settings" element={<AdminDashboard />} />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppContainer>

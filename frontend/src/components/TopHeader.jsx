@@ -162,6 +162,23 @@ const TopHeader = () => {
           </div>
         </Badge>
 
+        {user && user.role === 'admin' && (
+          <Button 
+            type="primary"
+            onClick={() => navigate('/admin')}
+            style={{ 
+              borderRadius: '20px', 
+              fontWeight: '800', 
+              fontSize: '0.82rem',
+              backgroundColor: '#7c3aed',
+              borderColor: '#7c3aed',
+              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)'
+            }}
+          >
+            👑 Admin Portal
+          </Button>
+        )}
+
         {user ? (
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
