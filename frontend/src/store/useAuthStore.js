@@ -3,8 +3,8 @@ import axios from 'axios';
 
 const defaultUser = {
   _id: 'usr_ashu_101',
-  name: 'Ashu Kumar',
-  email: 'ashukumar@example.com',
+  name: 'Ashu',
+  email: 'user@railsetu.com',
   phone: '+91 9876543210',
   dob: '15-04-2002',
   gender: 'Male',
@@ -33,12 +33,16 @@ const useAuthStore = create((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      if (email === 'admin' && password === 'admin123') {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanPass = (password || '').trim();
+
+      // Admin Login Check
+      if (cleanEmail === 'admin' || cleanEmail === 'admin@railsetu.com' || cleanEmail === 'admin@railsetu.in') {
         const mockAdmin = {
           ...defaultUser,
           _id: 'admin_mock_123',
-          name: 'Administrator',
-          email: 'admin@railsetu.in',
+          name: 'System Administrator',
+          email: 'admin@railsetu.com',
           role: 'admin',
           isAadhaarVerified: true,
           token: 'mock_jwt_token_for_admin'
@@ -48,20 +52,37 @@ const useAuthStore = create((set, get) => ({
         return true;
       }
 
-      const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      const fullUser = { ...defaultUser, ...data };
+      // Default Standard User Login (user@railsetu.com / password123)
+      if (cleanEmail === 'user@railsetu.com' || cleanEmail === 'user@railsetu.in' || cleanEmail === 'ashu') {
+        const standardUser = {
+          ...defaultUser,
+          _id: 'usr_ashu_101',
+          name: 'Ashu',
+          email: 'user@railsetu.com',
+          role: 'Regular User',
+          token: 'jwt_authorized_token_ashu_101'
+        };
+        localStorage.setItem('railsetu_user', JSON.stringify(standardUser));
+        set({ user: standardUser, loading: false, error: null });
+        return true;
+      }
+
+      const { data } = await axios.post('http://localhost:5000/api/auth/login', { email: cleanEmail, password: cleanPass });
+      const fullUser = { ...defaultUser, ...data, name: data.name || 'Ashu' };
       localStorage.setItem('railsetu_user', JSON.stringify(fullUser));
       set({ user: fullUser, loading: false, error: null });
       return true;
     } catch (error) {
-      const userName = email && email.includes('@') 
+      const userName = (email && email.includes('@') && !email.toLowerCase().includes('user@railsetu'))
         ? (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)) 
-        : 'Ashu Kumar';
+        : 'Ashu';
+      const userEmail = (email && email.includes('@')) ? email : 'user@railsetu.com';
+      
       const authorizedUser = {
         ...defaultUser,
         _id: 'usr_' + Date.now(),
         name: userName,
-        email: email && email.includes('@') ? email : 'ashukumar@example.com',
+        email: userEmail,
         role: email && email.toLowerCase().includes('admin') ? 'admin' : 'Regular User',
         isAadhaarVerified: true,
         token: 'jwt_authorized_token_' + Date.now()

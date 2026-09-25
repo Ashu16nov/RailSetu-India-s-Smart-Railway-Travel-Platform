@@ -47,11 +47,41 @@ const Login = () => {
       <Title level={2} style={{ color: '#00234b', marginBottom: '5px', fontWeight: '800', fontSize: '1.6rem' }}>
         Welcome Back!
       </Title>
-      <Text style={{ color: '#595959', display: 'block', marginBottom: '20px', fontSize: '0.95rem' }}>
-        Login to your account to continue your journey
-      </Text>
-
-      <Form form={form} layout="vertical" onFinish={onFinish} size="large">
+      <Form 
+        form={form} 
+        layout="vertical" 
+        onFinish={onFinish} 
+        size="large"
+        initialValues={{
+          email: 'user@railsetu.com',
+          password: 'password123',
+          remember: true
+        }}
+      >
+        <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #bae0ff', borderRadius: '10px', padding: '12px 14px', marginBottom: '18px' }}>
+          <Text style={{ fontSize: '0.78rem', color: '#00234b', fontWeight: '700', display: 'block', marginBottom: '6px' }}>
+            💡 Quick Login Credentials:
+          </Text>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Button 
+              size="small" 
+              type="primary" 
+              ghost
+              onClick={() => form.setFieldsValue({ email: 'user@railsetu.com', password: 'password123' })}
+              style={{ fontSize: '0.72rem', borderRadius: '6px', fontWeight: '600' }}
+            >
+              User: user@railsetu.com (Ashu)
+            </Button>
+            <Button 
+              size="small" 
+              type="default" 
+              onClick={() => form.setFieldsValue({ email: 'admin@railsetu.com', password: 'admin123' })}
+              style={{ fontSize: '0.72rem', borderRadius: '6px', fontWeight: '600', color: '#00234b' }}
+            >
+              Admin: admin@railsetu.com
+            </Button>
+          </div>
+        </div>
         <Form.Item name="email" rules={[{ required: true, message: 'Please input your email!' }]} style={{ marginBottom: '15px' }}>
           <Input 
             prefix={<Mail size={18} color="#8c8c8c" style={{ marginRight: '10px' }}/>} 
