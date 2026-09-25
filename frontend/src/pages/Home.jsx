@@ -24,6 +24,11 @@ const Home = () => {
   const [pnrTabInput, setPnrTabInput] = useState('');
   const [liveTabInput, setLiveTabInput] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableTrains, setAvailableTrains] = useState([
+    { id: '12561', trainNumber: '12561', trainName: 'Swatantrata Senani Express', source: 'New Delhi (NDLS)', destination: 'Varanasi (BSB)', departureTime: '21:15', arrivalTime: '05:30', duration: '8h 15m', class: '3AC', fare: 1210 },
+    { id: '12393', trainNumber: '12393', trainName: 'Sampoorna Kranti Express', source: 'Patna Junction (PNBE)', destination: 'New Delhi (NDLS)', departureTime: '19:25', arrivalTime: '07:55', duration: '12h 30m', class: '3AC', fare: 1360 },
+    { id: '20685', trainNumber: '20685', trainName: 'Vande Bharat Express', source: 'Chennai Central (MAS)', destination: 'KSR Bengaluru (SBC)', departureTime: '05:50', arrivalTime: '10:15', duration: '4h 25m', class: 'CC', fare: 980 }
+  ]);
 
   const getStationOptions = (query) => {
     const matches = searchStations(query || '');
