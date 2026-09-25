@@ -42,15 +42,6 @@ const Login = () => {
             INDIAN RAILWAY BOOKING & TRAVEL
           </Text>
         </div>
-        <div style={{ marginTop: '12px' }}>
-          <Button 
-            type="link" 
-            onClick={() => navigate('/')} 
-            style={{ color: '#1890ff', fontWeight: '600', fontSize: '0.85rem' }}
-          >
-            &larr; Back to Dashboard
-          </Button>
-        </div>
       </div>
 
       <Title level={2} style={{ color: '#00234b', marginBottom: '5px', fontWeight: '800', fontSize: '1.6rem' }}>
