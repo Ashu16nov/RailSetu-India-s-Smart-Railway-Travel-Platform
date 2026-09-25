@@ -21,6 +21,50 @@ import useBookingStore from '../store/useBookingStore';
 
 const { Title, Text } = Typography;
 
+const getStatusBannerInfo = (status) => {
+  const lower = (status || '').toLowerCase();
+  if (lower.includes('cnf') || lower.includes('confirm')) {
+    return { 
+      bg: '#f6ffed', 
+      border: '#b7eb8f', 
+      color: '#52c41a', 
+      iconBg: '#52c41a', 
+      msg: 'Your ticket is confirmed! You are ready to travel.' 
+    };
+  } else if (lower.includes('rac')) {
+    return { 
+      bg: '#fffbe6', 
+      border: '#ffe58f', 
+      color: '#fa8c16', 
+      iconBg: '#fa8c16', 
+      msg: 'Your ticket is in RAC status. Seat allocation guaranteed.' 
+    };
+  } else if (lower.includes('wl') || lower.includes('wait')) {
+    return { 
+      bg: '#fff2e8', 
+      border: '#ffbb96', 
+      color: '#ff4d4f', 
+      iconBg: '#ff4d4f', 
+      msg: 'Your ticket is currently in Waiting List.' 
+    };
+  } else if (lower.includes('can')) {
+    return { 
+      bg: '#f5f5f5', 
+      border: '#d9d9d9', 
+      color: '#595959', 
+      iconBg: '#8c8c8c', 
+      msg: 'This ticket has been cancelled.' 
+    };
+  }
+  return { 
+    bg: '#e6f7ff', 
+    border: '#91d5ff', 
+    color: '#1890ff', 
+    iconBg: '#1890ff', 
+    msg: 'Ticket status active.' 
+  };
+};
+
 const PNRStatus = () => {
   const navigate = useNavigate();
   const location = useLocation();

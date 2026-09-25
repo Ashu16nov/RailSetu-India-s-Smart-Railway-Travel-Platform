@@ -1,21 +1,32 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import BookTicket from './pages/BookTicket';
-
 import Profile from './pages/Profile';
 import PNRStatus from './pages/PNRStatus';
 import Settings from './pages/Settings';
 import LiveStatus from './pages/LiveStatus';
 import MyBookings from './pages/MyBookings';
+import useAuthStore from './store/useAuthStore';
 
-// Separate layout for authentication pages
+// Separate layout for authentication pages vs protected dashboard pages
 const AppContainer = ({ children }) => {
   const location = useLocation();
+  const user = useAuthStore(state => state.user);
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
+
+  // If user is not logged in and trying to access protected pages, redirect to login
+  if (!user && !isAuthPage) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If user is already logged in and on login/register page, redirect to Home
+  if (user && isAuthPage) {
+    return <Navigate to="/" replace />;
+  }
 
   if (isAuthPage) {
     return (
@@ -46,6 +57,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppContainer>
     </Router>

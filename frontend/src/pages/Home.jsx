@@ -22,6 +22,12 @@ const Home = () => {
   const [travelClass, setTravelClass] = useState('all');
   const [pnrTabInput, setPnrTabInput] = useState('');
   const [liveTabInput, setLiveTabInput] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableTrains, setAvailableTrains] = useState([
+    { id: '12561', trainNumber: '12561', trainName: 'Swatantrata Senani Express', source: 'New Delhi (NDLS)', destination: 'Varanasi (BSB)', departureTime: '21:15', arrivalTime: '05:30', duration: '8h 15m', class: '3AC', fare: 1210 },
+    { id: '12951', trainNumber: '12951', trainName: 'Rajdhani Express', source: 'New Delhi (NDLS)', destination: 'Mumbai Central (MMCT)', departureTime: '16:55', arrivalTime: '08:35', duration: '15h 40m', class: '2AC', fare: 2450 },
+    { id: '20685', trainNumber: '20685', trainName: 'Vande Bharat Express', source: 'Chennai Central (MAS)', destination: 'KSR Bengaluru (SBC)', departureTime: '05:50', arrivalTime: '10:15', duration: '4h 25m', class: 'CC', fare: 980 }
+  ]);
 
   useEffect(() => {
     fetchBookings();
@@ -31,7 +37,6 @@ const Home = () => {
     const src = source || fromStation || 'New Delhi (NDLS)';
     const dst = dest || toStation || 'Varanasi (BSB)';
 
-    // Extract station code if present
     const srcCode = src.includes('(') ? src.match(/\(([^)]+)\)/)?.[1] || 'NDLS' : src.slice(0, 4).toUpperCase();
     const dstCode = dst.includes('(') ? dst.match(/\(([^)]+)\)/)?.[1] || 'BSB' : dst.slice(0, 4).toUpperCase();
 
@@ -43,6 +48,21 @@ const Home = () => {
         travelClass: travelClass === 'all' ? 'SL' : travelClass
       }
     });
+  };
+
+  const handleConfirmBooking = (train) => {
+    const newBooking = addBooking({
+      trainName: train.trainName,
+      trainNumber: train.trainNumber,
+      source: train.source,
+      destination: train.destination,
+      className: train.class || '3AC',
+      totalFare: train.fare,
+      journeyTime: train.departureTime
+    });
+    setIsModalOpen(false);
+    message.success(`Ticket booked for ${train.trainName}! PNR: ${newBooking.pnr}`);
+    navigate('/my-bookings');
   };
 
   const handleCheckPNRSubmit = () => {

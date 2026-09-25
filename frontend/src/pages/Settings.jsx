@@ -249,14 +249,14 @@ const Settings = () => {
             style={{ borderRadius: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', marginBottom: '24px' }}
             bodyStyle={{ padding: '28px' }}
           >
-            {/* Header with Edit Button */}
+            {/* Header with Edit/Save Button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div>
                 <Title level={4} style={{ margin: 0, fontWeight: '700', color: '#1e293b' }}>
-                  Account Settings
+                  {navItems.find(i => i.key === activeTab)?.title || 'Account Settings'}
                 </Title>
                 <Text style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                  Update your personal information and contact details.
+                  {navItems.find(i => i.key === activeTab)?.subtitle || 'Update your personal details & preferences.'}
                 </Text>
               </div>
               <Button 
@@ -278,300 +278,437 @@ const Settings = () => {
               </Button>
             </div>
 
-            {/* Profile Avatar Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '28px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-              <Avatar 
-                size={70} 
-                icon={<User size={38} color="#0d47a1" />}
-                style={{ backgroundColor: '#e3f2fd', border: '3px solid #ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-              />
+            {/* Sub-Tab 1: Account Settings */}
+            {activeTab === 'account' && (
               <div>
-                <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#1e293b', lineHeight: 1.2 }}>
-                  {formData.name}
-                </Title>
-                <Text style={{ fontSize: '0.88rem', color: '#64748b', display: 'block', marginBottom: '6px' }}>
-                  {formData.email}
-                </Text>
-                <Tag 
-                  color="blue" 
-                  style={{ 
-                    borderRadius: '12px', 
-                    padding: '2px 10px', 
-                    fontWeight: '700', 
-                    fontSize: '0.75rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <ShieldCheck size={12} /> {user?.role || 'Regular User'}
-                </Tag>
-              </div>
-            </div>
-
-            {/* Personal Information Section */}
-            <div style={{ marginBottom: '28px' }}>
-              <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
-                Personal Information
-              </Title>
-
-              <Row gutter={[20, 16]}>
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Full Name</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.name} 
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.name}</Text>
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Mobile Number</Text>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isEditing ? (
-                      <Input 
-                        value={formData.phone} 
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        style={{ borderRadius: '8px' }} 
-                      />
-                    ) : (
-                      <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.phone}</Text>
-                    )}
-                    <Tag color="green" style={{ borderRadius: '10px', fontWeight: '700', fontSize: '0.72rem', border: 'none', backgroundColor: '#e6f4ea', color: '#137333' }}>
-                      ✔ Verified
-                    </Tag>
-                  </div>
-                </Col>
-
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Gender</Text>
-                  {isEditing ? (
-                    <Select 
-                      value={formData.gender} 
-                      onChange={(val) => handleInputChange('gender', val)}
-                      style={{ width: '100%' }}
+                {/* Profile Avatar Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '28px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                  <Avatar 
+                    size={70} 
+                    icon={<User size={38} color="#0d47a1" />}
+                    style={{ backgroundColor: '#e3f2fd', border: '3px solid #ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  />
+                  <div>
+                    <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#1e293b', lineHeight: 1.2 }}>
+                      {formData.name}
+                    </Title>
+                    <Text style={{ fontSize: '0.88rem', color: '#64748b', display: 'block', marginBottom: '6px' }}>
+                      {formData.email}
+                    </Text>
+                    <Tag 
+                      color="blue" 
+                      style={{ 
+                        borderRadius: '12px', 
+                        padding: '2px 10px', 
+                        fontWeight: '700', 
+                        fontSize: '0.75rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
                     >
-                      <Option value="Male">Male</Option>
-                      <Option value="Female">Female</Option>
-                      <Option value="Other">Other</Option>
-                    </Select>
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.gender}</Text>
-                  )}
-                </Col>
-
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Email Address</Text>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isEditing ? (
-                      <Input 
-                        value={formData.email} 
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        style={{ borderRadius: '8px' }} 
-                      />
-                    ) : (
-                      <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.email}</Text>
-                    )}
-                    <Tag color="green" style={{ borderRadius: '10px', fontWeight: '700', fontSize: '0.72rem', border: 'none', backgroundColor: '#e6f4ea', color: '#137333' }}>
-                      ✔ Verified
+                      <ShieldCheck size={12} /> {user?.role || 'Regular User'}
                     </Tag>
                   </div>
-                </Col>
+                </div>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Date of Birth</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.dob} 
-                      onChange={(e) => handleInputChange('dob', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.dob}</Text>
-                  )}
-                </Col>
+                {/* Personal Information Section */}
+                <div style={{ marginBottom: '28px' }}>
+                  <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                    Personal Information
+                  </Title>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Nationality</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.nationality} 
-                      onChange={(e) => handleInputChange('nationality', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.nationality}</Text>
-                  )}
-                </Col>
-              </Row>
-            </div>
+                  <Row gutter={[20, 16]}>
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Full Name</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.name} 
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.name}</Text>
+                      )}
+                    </Col>
 
-            <Divider style={{ margin: '20px 0' }} />
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Mobile Number</Text>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isEditing ? (
+                          <Input 
+                            value={formData.phone} 
+                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                            style={{ borderRadius: '8px' }} 
+                          />
+                        ) : (
+                          <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.phone}</Text>
+                        )}
+                        <Tag color="green" style={{ borderRadius: '10px', fontWeight: '700', fontSize: '0.72rem', border: 'none', backgroundColor: '#e6f4ea', color: '#137333' }}>
+                          ✔ Verified
+                        </Tag>
+                      </div>
+                    </Col>
 
-            {/* Contact Address Section */}
-            <div style={{ marginBottom: '28px' }}>
-              <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
-                Contact Address
-              </Title>
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Gender</Text>
+                      {isEditing ? (
+                        <Select 
+                          value={formData.gender} 
+                          onChange={(val) => handleInputChange('gender', val)}
+                          style={{ width: '100%' }}
+                        >
+                          <Option value="Male">Male</Option>
+                          <Option value="Female">Female</Option>
+                          <Option value="Other">Other</Option>
+                        </Select>
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.gender}</Text>
+                      )}
+                    </Col>
 
-              <Row gutter={[20, 16]}>
-                <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Address Line 1</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.addressLine1} 
-                      onChange={(e) => handleInputChange('addressLine1', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.addressLine1}</Text>
-                  )}
-                </Col>
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Email Address</Text>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isEditing ? (
+                          <Input 
+                            value={formData.email} 
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            style={{ borderRadius: '8px' }} 
+                          />
+                        ) : (
+                          <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.email}</Text>
+                        )}
+                        <Tag color="green" style={{ borderRadius: '10px', fontWeight: '700', fontSize: '0.72rem', border: 'none', backgroundColor: '#e6f4ea', color: '#137333' }}>
+                          ✔ Verified
+                        </Tag>
+                      </div>
+                    </Col>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Address Line 2</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.addressLine2} 
-                      onChange={(e) => handleInputChange('addressLine2', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.addressLine2}</Text>
-                  )}
-                </Col>
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Date of Birth</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.dob} 
+                          onChange={(e) => handleInputChange('dob', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.dob}</Text>
+                      )}
+                    </Col>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>State</Text>
-                  <Select 
-                    value={formData.state} 
-                    onChange={(val) => handleInputChange('state', val)}
-                    style={{ width: '100%', borderRadius: '8px' }}
-                    disabled={!isEditing}
-                  >
-                    <Option value="Delhi">Delhi</Option>
-                    <Option value="Uttar Pradesh">Uttar Pradesh</Option>
-                    <Option value="Maharashtra">Maharashtra</Option>
-                    <Option value="Karnataka">Karnataka</Option>
-                    <Option value="Tamil Nadu">Tamil Nadu</Option>
-                    <Option value="West Bengal">West Bengal</Option>
-                  </Select>
-                </Col>
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Nationality</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.nationality} 
+                          onChange={(e) => handleInputChange('nationality', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.nationality}</Text>
+                      )}
+                    </Col>
+                  </Row>
+                </div>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>City</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.city} 
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.city}</Text>
-                  )}
-                </Col>
+                <Divider style={{ margin: '20px 0' }} />
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>PIN Code</Text>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.pincode} 
-                      onChange={(e) => handleInputChange('pincode', e.target.value)}
-                      style={{ borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.pincode}</Text>
-                  )}
-                </Col>
-              </Row>
-            </div>
+                {/* Contact Address Section */}
+                <div style={{ marginBottom: '28px' }}>
+                  <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                    Contact Address
+                  </Title>
 
-            {/* Travel Preferences Embedded Section */}
-            <div 
-              style={{
-                backgroundColor: '#f0f7ff',
-                border: '1px solid #bae0ff',
-                borderRadius: '16px',
-                padding: '20px',
-                marginBottom: '28px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                <Train size={20} color="#1890ff" />
-                <div>
-                  <Text strong style={{ fontSize: '0.95rem', color: '#002766', display: 'block' }}>
-                    Travel Preferences
-                  </Text>
-                  <Text style={{ fontSize: '0.78rem', color: '#0050b3' }}>
-                    Set your default preferences for a faster booking experience.
-                  </Text>
+                  <Row gutter={[20, 16]}>
+                    <Col span={24}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Address Line 1</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.addressLine1} 
+                          onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.addressLine1}</Text>
+                      )}
+                    </Col>
+
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Address Line 2</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.addressLine2} 
+                          onChange={(e) => handleInputChange('addressLine2', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.addressLine2}</Text>
+                      )}
+                    </Col>
+
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>State</Text>
+                      <Select 
+                        value={formData.state} 
+                        onChange={(val) => handleInputChange('state', val)}
+                        style={{ width: '100%', borderRadius: '8px' }}
+                        disabled={!isEditing}
+                      >
+                        <Option value="Delhi">Delhi</Option>
+                        <Option value="Uttar Pradesh">Uttar Pradesh</Option>
+                        <Option value="Maharashtra">Maharashtra</Option>
+                        <Option value="Karnataka">Karnataka</Option>
+                        <Option value="Tamil Nadu">Tamil Nadu</Option>
+                        <Option value="West Bengal">West Bengal</Option>
+                      </Select>
+                    </Col>
+
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>City</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.city} 
+                          onChange={(e) => handleInputChange('city', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.city}</Text>
+                      )}
+                    </Col>
+
+                    <Col span={12}>
+                      <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>PIN Code</Text>
+                      {isEditing ? (
+                        <Input 
+                          value={formData.pincode} 
+                          onChange={(e) => handleInputChange('pincode', e.target.value)}
+                          style={{ borderRadius: '8px' }} 
+                        />
+                      ) : (
+                        <Text strong style={{ fontSize: '0.95rem', color: '#1e293b' }}>{formData.pincode}</Text>
+                      )}
+                    </Col>
+                  </Row>
                 </div>
               </div>
+            )}
 
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Preferred Class</Text>
-                  <Select 
-                    value={formData.preferredClass} 
-                    onChange={(val) => handleInputChange('preferredClass', val)}
-                    style={{ width: '100%' }}
-                    prefix={<Bed size={16} color="#8c8c8c" />}
-                  >
-                    <Option value="SL">Sleeper (SL)</Option>
-                    <Option value="3A">AC 3 Tier (3A)</Option>
-                    <Option value="2A">AC 2 Tier (2A)</Option>
-                    <Option value="1A">AC 1st Class (1A)</Option>
-                    <Option value="CC">AC Chair Car (CC)</Option>
-                  </Select>
-                </Col>
+            {/* Sub-Tab 2: Security */}
+            {activeTab === 'security' && (
+              <div>
+                <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                  Change Password
+                </Title>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Current Password</Text>
+                    <Input.Password placeholder="Enter current password" style={{ borderRadius: '8px', height: '40px' }} />
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>New Password</Text>
+                    <Input.Password placeholder="Enter new password" style={{ borderRadius: '8px', height: '40px' }} />
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Confirm New Password</Text>
+                    <Input.Password placeholder="Confirm new password" style={{ borderRadius: '8px', height: '40px' }} />
+                  </div>
+                </div>
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Preferred Berth</Text>
-                  <Select 
-                    value={formData.preferredBerth} 
-                    onChange={(val) => handleInputChange('preferredBerth', val)}
-                    style={{ width: '100%' }}
-                  >
-                    <Option value="No Preference">No Preference</Option>
-                    <Option value="Lower">Lower Berth</Option>
-                    <Option value="Middle">Middle Berth</Option>
-                    <Option value="Upper">Upper Berth</Option>
-                    <Option value="Side Lower">Side Lower</Option>
-                    <Option value="Side Upper">Side Upper</Option>
-                  </Select>
-                </Col>
+                <Divider style={{ margin: '20px 0' }} />
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Food Preference</Text>
-                  <Select 
-                    value={formData.foodPreference} 
-                    onChange={(val) => handleInputChange('foodPreference', val)}
-                    style={{ width: '100%' }}
-                  >
-                    <Option value="Veg">Veg</Option>
-                    <Option value="Non-Veg">Non-Veg</Option>
-                    <Option value="Jain">Jain Food</Option>
-                    <Option value="No Food">No Food Required</Option>
-                  </Select>
-                </Col>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <Text strong style={{ fontSize: '0.95rem', color: '#1e293b', display: 'block' }}>Two-Factor Authentication (2FA)</Text>
+                    <Text type="secondary" style={{ fontSize: '0.78rem' }}>Require an OTP sent to your phone/email when logging in.</Text>
+                  </div>
+                  <Switch defaultChecked onChange={(checked) => message.success(`2FA ${checked ? 'enabled' : 'disabled'}`)} />
+                </div>
+              </div>
+            )}
 
-                <Col span={12}>
-                  <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Disability Concession</Text>
-                  <Select 
-                    value={formData.disabilityConcession} 
-                    onChange={(val) => handleInputChange('disabilityConcession', val)}
-                    style={{ width: '100%' }}
-                  >
-                    <Option value="None">None</Option>
-                    <Option value="Divyangjan">Divyangjan Concession</Option>
-                  </Select>
-                </Col>
-              </Row>
-            </div>
+            {/* Sub-Tab 3: Notifications */}
+            {activeTab === 'notifications' && (
+              <div>
+                <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                  Notification Settings
+                </Title>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '24px' }}>
+                  {[
+                    { label: 'Booking & PNR Updates', desc: 'Receive instant notifications for ticket status and delays', default: true },
+                    { label: 'Email Alerts', desc: 'Send e-Tickets and invoices directly to your registered email', default: true },
+                    { label: 'SMS & WhatsApp Updates', desc: 'Get updates on your phone number via SMS/WhatsApp', default: true },
+                    { label: 'Promotional Offers', desc: 'Receive discount coupons, festival special train alerts & news', default: false }
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
+                      <div>
+                        <Text strong style={{ fontSize: '0.9rem', color: '#1e293b', display: 'block' }}>{item.label}</Text>
+                        <Text type="secondary" style={{ fontSize: '0.78rem' }}>{item.desc}</Text>
+                      </div>
+                      <Switch defaultChecked={item.default} onChange={(val) => message.info(`${item.label} ${val ? 'enabled' : 'disabled'}`)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-Tab 4: Travel Preferences */}
+            {(activeTab === 'travel' || activeTab === 'account') && (
+              <div 
+                style={{
+                  backgroundColor: '#f0f7ff',
+                  border: '1px solid #bae0ff',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  marginBottom: '28px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                  <Train size={20} color="#1890ff" />
+                  <div>
+                    <Text strong style={{ fontSize: '0.95rem', color: '#002766', display: 'block' }}>
+                      Travel Preferences
+                    </Text>
+                    <Text style={{ fontSize: '0.78rem', color: '#0050b3' }}>
+                      Set your default preferences for a faster booking experience.
+                    </Text>
+                  </div>
+                </div>
+
+                <Row gutter={[16, 16]}>
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Preferred Class</Text>
+                    <Select 
+                      value={formData.preferredClass} 
+                      onChange={(val) => handleInputChange('preferredClass', val)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="SL">Sleeper (SL)</Option>
+                      <Option value="3A">AC 3 Tier (3A)</Option>
+                      <Option value="2A">AC 2 Tier (2A)</Option>
+                      <Option value="1A">AC 1st Class (1A)</Option>
+                      <Option value="CC">AC Chair Car (CC)</Option>
+                    </Select>
+                  </Col>
+
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Preferred Berth</Text>
+                    <Select 
+                      value={formData.preferredBerth} 
+                      onChange={(val) => handleInputChange('preferredBerth', val)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="No Preference">No Preference</Option>
+                      <Option value="Lower">Lower Berth</Option>
+                      <Option value="Middle">Middle Berth</Option>
+                      <Option value="Upper">Upper Berth</Option>
+                      <Option value="Side Lower">Side Lower</Option>
+                      <Option value="Side Upper">Side Upper</Option>
+                    </Select>
+                  </Col>
+
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Food Preference</Text>
+                    <Select 
+                      value={formData.foodPreference} 
+                      onChange={(val) => handleInputChange('foodPreference', val)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="Veg">Veg</Option>
+                      <Option value="Non-Veg">Non-Veg</Option>
+                      <Option value="Jain">Jain Food</Option>
+                      <Option value="No Food">No Food Required</Option>
+                    </Select>
+                  </Col>
+
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '4px' }}>Disability Concession</Text>
+                    <Select 
+                      value={formData.disabilityConcession} 
+                      onChange={(val) => handleInputChange('disabilityConcession', val)}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="None">None</Option>
+                      <Option value="Divyangjan">Divyangjan Concession</Option>
+                    </Select>
+                  </Col>
+                </Row>
+              </div>
+            )}
+
+            {/* Sub-Tab 5: Payment Methods */}
+            {activeTab === 'payment' && (
+              <div>
+                <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                  Saved Payment Methods
+                </Title>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                  <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <CreditCard size={24} color="#1890ff" />
+                      <div>
+                        <Text strong style={{ fontSize: '0.9rem', color: '#1e293b', display: 'block' }}>UPI ID (Google Pay / PhonePe)</Text>
+                        <Text type="secondary" style={{ fontSize: '0.78rem' }}>ashukumar@upi</Text>
+                      </div>
+                    </div>
+                    <Tag color="blue">Default</Tag>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <CreditCard size={24} color="#0d47a1" />
+                      <div>
+                        <Text strong style={{ fontSize: '0.9rem', color: '#1e293b', display: 'block' }}>HDFC Bank Debit Card</Text>
+                        <Text type="secondary" style={{ fontSize: '0.78rem' }}>•••• •••• •••• 4512</Text>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-Tab 6: Privacy */}
+            {activeTab === 'privacy' && (
+              <div>
+                <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                  Privacy & Data Sharing
+                </Title>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
+                    <div>
+                      <Text strong style={{ fontSize: '0.9rem', color: '#1e293b', display: 'block' }}>Profile Visibility</Text>
+                      <Text type="secondary" style={{ fontSize: '0.78rem' }}>Allow co-passengers to see basic profile details</Text>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
+                    <div>
+                      <Text strong style={{ fontSize: '0.9rem', color: '#1e293b', display: 'block' }}>Personalized Recommendations</Text>
+                      <Text type="secondary" style={{ fontSize: '0.78rem' }}>Use travel history for smart train suggestions</Text>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-Tab 7: Help & Support */}
+            {activeTab === 'support' && (
+              <div>
+                <Title level={5} style={{ color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>
+                  RailSetu Customer Care & Support
+                </Title>
+                <div style={{ backgroundColor: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <Text strong style={{ color: '#0050b3', display: 'block', fontSize: '0.95rem' }}>24x7 Railway Helpline Number</Text>
+                  <Text style={{ color: '#003a8c', fontSize: '1.2rem', fontWeight: '800' }}>📞 Dial 139</Text>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <Button type="primary" block style={{ height: '42px', borderRadius: '8px', fontWeight: '600' }} onClick={() => message.info('Opening live chat with RailSetu Assistant')}>
+                    Chat with RailSetu Support
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Bottom Save Changes Button */}
             <Button 
@@ -590,7 +727,8 @@ const Settings = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(24,144,255,0.3)'
+                boxShadow: '0 4px 14px rgba(24,144,255,0.3)',
+                marginTop: '20px'
               }}
             >
               Save Changes
