@@ -1,23 +1,60 @@
 import React, { useState } from 'react';
-import { Card, Typography, Table, Tag, Input, Button, Avatar, Space, message, Badge } from 'antd';
-import { Users, Search, ShieldCheck, Mail, Phone, Lock, CheckCircle2, UserX } from 'lucide-react';
+import { Card, Typography, Table, Tag, Input, Button, Avatar, Space, message, Modal, Form, Select, Switch, Popconfirm } from 'antd';
+import { Users, Search, Plus, Edit, Trash2, ShieldCheck, Mail, Phone, CheckCircle2, UserX, Shield } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
 const { Title, Text } = Typography;
 
 const AdminUsers = () => {
   const currentUser = useAuthStore(state => state.user);
-  const [searchText, setSearchText] = useState('');
-
-  const mockUsers = [
+  const [usersList, setUsersList] = useState([
     { id: '1', name: 'Ashu', email: 'user@railsetu.com', phone: '+91 9876543210', role: 'Regular User', aadhaarVerified: true, city: 'New Delhi', bookingsCount: 4 },
     { id: '2', name: 'System Administrator', email: 'admin@railsetu.com', phone: '+91 9000000000', role: 'Admin', aadhaarVerified: true, city: 'New Delhi', bookingsCount: 12 },
     { id: '3', name: 'Rohan Sharma', email: 'rohan.sharma@example.com', phone: '+91 9123456789', role: 'Regular User', aadhaarVerified: true, city: 'Patna', bookingsCount: 2 },
     { id: '4', name: 'Priya Verma', email: 'priya.v@example.com', phone: '+91 9811223344', role: 'Regular User', aadhaarVerified: false, city: 'Varanasi', bookingsCount: 1 },
     { id: '5', name: 'Vikram Singh', email: 'vikram.s@example.com', phone: '+91 9765432100', role: 'Regular User', aadhaarVerified: true, city: 'Mumbai', bookingsCount: 6 }
-  ];
+  ]);
 
-  const filteredUsers = mockUsers.filter(u => 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [form] = Form.useForm();
+
+  const handleCreateOrUpdate = (values) => {
+    if (editingUser) {
+      setUsersList(usersList.map(u => u.id === editingUser.id ? { ...u, ...values } : u));
+      message.success(`User account for ${values.name} updated!`);
+    } else {
+      const newUser = {
+        id: 'usr_' + Date.now(),
+        ...values,
+        bookingsCount: 0
+      };
+      setUsersList([newUser, ...usersList]);
+      message.success(`Passenger account created for ${values.name}!`);
+    }
+    setIsModalOpen(false);
+    setEditingUser(null);
+    form.resetFields();
+  };
+
+  const handleEditClick = (record) => {
+    setEditingUser(record);
+    form.setFieldsValue(record);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteUser = (id, name) => {
+    setUsersList(usersList.filter(u => u.id !== id));
+    message.success(`User account for ${name} deleted successfully`);
+  };
+
+  const handleToggleAadhaar = (id) => {
+    setUsersList(usersList.map(u => u.id === id ? { ...u, aadhaarVerified: !u.aadhaarVerified } : u));
+    message.success('Aadhaar verification status updated');
+  };
+
+  const filteredUsers = usersList.filter(u => 
     u.name.toLowerCase().includes(searchText.toLowerCase()) ||
     u.email.toLowerCase().includes(searchText.toLowerCase()) ||
     u.phone.includes(searchText) ||
@@ -65,13 +102,15 @@ const AdminUsers = () => {
       )
     },
     {
-      title: 'Aadhaar Status',
-      dataIndex: 'aadhaarVerified',
+      title: 'Aadhaar Verification',
       key: 'aadhaarVerified',
-      render: (verified) => (
-        <Tag color={verified ? 'success' : 'warning'} style={{ fontWeight: '700', borderRadius: '6px' }}>
-          {verified ? '✓ VERIFIED' : 'PENDING'}
-        </Tag>
+      render: (record) => (
+        <Switch
+          checked={record.aadhaarVerified}
+          onChange={() => handleToggleAadhaar(record.id)}
+          checkedChildren="VERIFIED"
+          unCheckedChildren="PENDING"
+        />
       )
     },
     {
@@ -83,17 +122,25 @@ const AdminUsers = () => {
       )
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: 'Actions',
+      key: 'actions',
       render: (record) => (
-        <Space size="small">
+        <Space size="middle">
           <Button 
             size="small" 
-            onClick={() => message.info(`Managing passenger ${record.name}`)}
-            style={{ borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600' }}
+            type="link"
+            icon={<Edit size={16} />}
+            onClick={() => handleEditClick(record)}
+            style={{ color: '#60a5fa' }}
+          />
+          <Popconfirm
+            title={`Delete account for ${record.name}?`}
+            onConfirm={() => handleDeleteUser(record.id, record.name)}
+            okText="Yes, Delete"
+            cancelText="Cancel"
           >
-            Manage User
-          </Button>
+            <Button size="small" type="link" danger icon={<Trash2 size={16} />} />
+          </Popconfirm>
         </Space>
       )
     }
@@ -109,9 +156,22 @@ const AdminUsers = () => {
             Passenger Account Registry
           </Title>
           <Text style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
-            User Account Database, Aadhaar Verification Status & Platform Roles
+            User Account Database, Aadhaar Verification Status & Platform Roles Management
           </Text>
         </div>
+
+        <Button 
+          type="primary"
+          icon={<Plus size={18} />}
+          onClick={() => {
+            setEditingUser(null);
+            form.resetFields();
+            setIsModalOpen(true);
+          }}
+          style={{ borderRadius: '8px', fontWeight: '700', backgroundColor: '#7c3aed', boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)' }}
+        >
+          Add New User Account
+        </Button>
       </div>
 
       {/* FILTER CARD */}
@@ -129,7 +189,7 @@ const AdminUsers = () => {
             style={{ borderRadius: '8px', backgroundColor: '#0f172a', border: '1px solid #334155', color: '#fff', height: '42px' }}
           />
           <Text style={{ color: '#94a3b8', fontWeight: '700', whiteSpace: 'nowrap' }}>
-            {filteredUsers.length} Users Found
+            {filteredUsers.length} Users Listed
           </Text>
         </div>
       </Card>
@@ -148,6 +208,54 @@ const AdminUsers = () => {
           style={{ backgroundColor: 'transparent' }}
         />
       </Card>
+
+      {/* CREATE / EDIT USER MODAL */}
+      <Modal
+        title={<span style={{ color: '#7c3aed', fontWeight: '800', fontSize: '1.2rem' }}>{editingUser ? 'Edit Passenger Account' : 'Add New Passenger Account'}</span>}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        centered
+        width={550}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreateOrUpdate} style={{ marginTop: '16px' }}>
+          <Form.Item name="name" label="Full Name" rules={[{ required: true, message: 'Please enter name' }]}>
+            <Input placeholder="e.g. Ashu" style={{ borderRadius: '8px' }} />
+          </Form.Item>
+
+          <Space size="middle" style={{ width: '100%', display: 'flex' }}>
+            <Form.Item name="email" label="Email Address" rules={[{ required: true, message: 'Please enter email' }]} style={{ flex: 1 }}>
+              <Input placeholder="e.g. user@railsetu.com" style={{ borderRadius: '8px' }} />
+            </Form.Item>
+            <Form.Item name="phone" label="Phone Number" rules={[{ required: true }]} style={{ flex: 1 }}>
+              <Input placeholder="+91 9876543210" style={{ borderRadius: '8px' }} />
+            </Form.Item>
+          </Space>
+
+          <Space size="middle" style={{ width: '100%', display: 'flex' }}>
+            <Form.Item name="city" label="City" style={{ flex: 1 }}>
+              <Input placeholder="New Delhi" style={{ borderRadius: '8px' }} />
+            </Form.Item>
+            <Form.Item name="role" label="Account Role" style={{ flex: 1 }}>
+              <Select style={{ borderRadius: '8px' }} options={[
+                { value: 'Regular User', label: 'Regular User' },
+                { value: 'Admin', label: 'Admin' }
+              ]} />
+            </Form.Item>
+          </Space>
+
+          <Form.Item name="aadhaarVerified" label="Aadhaar Verified" valuePropName="checked">
+            <Switch checkedChildren="VERIFIED" unCheckedChildren="PENDING" />
+          </Form.Item>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" style={{ backgroundColor: '#7c3aed', fontWeight: '700' }}>
+              {editingUser ? 'Save User Changes' : 'Create Account'}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
 
     </div>
   );

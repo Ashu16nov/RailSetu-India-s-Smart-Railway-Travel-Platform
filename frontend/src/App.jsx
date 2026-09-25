@@ -15,6 +15,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminTrains from './pages/admin/AdminTrains';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminNotices from './pages/admin/AdminNotices';
+import AdminSettings from './pages/admin/AdminSettings';
 import useAuthStore from './store/useAuthStore';
 
 // Separate layout for auth, admin, and protected user dashboard pages
@@ -74,8 +76,8 @@ function App() {
           <Route path="/admin/trains" element={<AdminTrains />} />
           <Route path="/admin/bookings" element={<AdminBookings />} />
           <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/notices" element={<AdminDashboard />} />
-          <Route path="/admin/settings" element={<AdminDashboard />} />
+          <Route path="/admin/notices" element={<AdminNotices />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

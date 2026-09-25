@@ -68,6 +68,24 @@ const useBookingStore = create((set, get) => ({
     set({ bookings: updated });
   },
 
+  updateBooking: (bookingId, updatedFields) => {
+    const list = get().bookings || [];
+    const updated = list.map((b) =>
+      b._id === bookingId || b.pnr === bookingId || b.bookingId === bookingId
+        ? { ...b, ...updatedFields }
+        : b
+    );
+    localStorage.setItem('railsetu_bookings', JSON.stringify(updated));
+    set({ bookings: updated });
+  },
+
+  deleteBooking: (bookingId) => {
+    const list = get().bookings || [];
+    const updated = list.filter((b) => b._id !== bookingId && b.pnr !== bookingId && b.bookingId !== bookingId);
+    localStorage.setItem('railsetu_bookings', JSON.stringify(updated));
+    set({ bookings: updated });
+  },
+
   getBookingByPNR: (pnrNumber) => {
     if (!pnrNumber) return null;
     const cleanPnr = pnrNumber.trim();
