@@ -248,12 +248,15 @@ const BookTicket = () => {
   const [selectedTrainId, setSelectedTrainId] = useState(null);
   const [selectedClassOverride, setSelectedClassOverride] = useState(null);
 
-  // Derived station cities
+  // Derived station displays without code duplication
   const fromStationObj = INDIAN_STATIONS.find(s => s.code === fromCode || s.name.toUpperCase().includes(fromCode) || s.city.toUpperCase().includes(fromCode));
   const toStationObj = INDIAN_STATIONS.find(s => s.code === toCode || s.name.toUpperCase().includes(toCode) || s.city.toUpperCase().includes(toCode));
 
-  const fromCity = fromStationObj ? `${fromStationObj.name} (${fromStationObj.code})` : (stationCityMap[fromCode] || `${fromCode} City`);
-  const toCity = toStationObj ? `${toStationObj.name} (${toStationObj.code})` : (stationCityMap[toCode] || `${toCode} City`);
+  const rawFromCity = fromStationObj ? fromStationObj.name : (stationCityMap[fromCode] || fromCode);
+  const rawToCity = toStationObj ? toStationObj.name : (stationCityMap[toCode] || toCode);
+
+  const fromCity = rawFromCity.includes(`(${fromCode})`) ? rawFromCity : `${rawFromCity} (${fromCode})`;
+  const toCity = rawToCity.includes(`(${toCode})`) ? rawToCity : `${rawToCity} (${toCode})`;
 
   // Pure derived matching trains list with real seat availability
   const displayedTrains = useMemo(() => {
@@ -390,18 +393,16 @@ const BookTicket = () => {
         {/* LEFT COLUMN: Hero Banner, Search Bar, Train Results List, Features Footer */}
         <Col xs={24} lg={16} xl={16}>
           
-          {/* HERO BANNER WITH SEARCH OVERLAY */}
-          <div style={{
-            position: 'relative',
-            marginBottom: '90px'
-          }}>
+          {/* HERO BANNER & SEARCH CONTROLS CONTAINER */}
+          <div style={{ marginBottom: '28px' }}>
             {/* Top Banner Image Container */}
             <div style={{
-              height: '210px',
-              borderRadius: '16px 16px 0 0',
+              height: '150px',
+              borderRadius: '16px',
               overflow: 'hidden',
               position: 'relative',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+              boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+              marginBottom: '16px'
             }}>
               <img 
                 src="https://images.unsplash.com/photo-1541427468627-a89a96e5ca1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80" 
@@ -414,33 +415,30 @@ const BookTicket = () => {
                 <Text style={{ fontSize: '0.7rem', color: '#69b1ff', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: '700', display: 'block', marginBottom: '4px' }}>
                   BOOK YOUR TRAIN TICKET
                 </Text>
-                <Title level={2} style={{ color: '#ffffff', margin: 0, fontWeight: '800', fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
+                <Title level={2} style={{ color: '#ffffff', margin: 0, fontWeight: '800', fontSize: '2rem', letterSpacing: '-0.5px' }}>
                   Travel Across India
                 </Title>
-                <Text style={{ color: '#e6f7ff', fontSize: '0.95rem', fontWeight: '500', marginTop: '6px', display: 'block' }}>
+                <Text style={{ color: '#e6f7ff', fontSize: '0.9rem', fontWeight: '500', marginTop: '4px', display: 'block' }}>
                   Comfortable &bull; Safe &bull; Affordable
                 </Text>
               </div>
             </div>
 
-            {/* OVERLAID SEARCH CONTROLS CARD */}
+            {/* SEARCH CONTROLS CARD */}
             <Card 
               bordered={false} 
               style={{ 
-                position: 'absolute', 
-                bottom: '-70px', 
-                left: '20px', 
-                right: '20px', 
                 borderRadius: '16px', 
-                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                backgroundColor: '#ffffff'
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e8e8e8'
               }}
-              bodyStyle={{ padding: '18px 24px' }}
+              bodyStyle={{ padding: '20px 24px' }}
             >
-              <Row gutter={[12, 12]} align="top">
+              <Row gutter={[16, 16]} align="top">
                 {/* From Station */}
                 <Col xs={24} sm={12} md={6} lg={6}>
-                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>From</div>
+                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '6px', fontWeight: '600' }}>From</div>
                   <AutoComplete
                     value={fromCode}
                     onChange={(v) => setFromCode(v.toUpperCase())}
@@ -448,17 +446,17 @@ const BookTicket = () => {
                     placeholder="Departure Station (e.g. PNBE, Patna)"
                     style={{ width: '100%', height: '42px' }}
                   />
-                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '4px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{fromCity}</Text>
+                  <Text style={{ fontSize: '0.72rem', color: '#1890ff', marginLeft: '2px', display: 'block', marginTop: '4px', fontWeight: '600', whiteSpace: 'nowrap' }}>{fromCity}</Text>
                 </Col>
 
                 {/* Swap Button */}
-                <Col xs={24} sm={2} md={1} lg={1} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: '22px' }}>
+                <Col xs={24} sm={2} md={1} lg={1} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: '26px' }}>
                   <div 
                     onClick={handleSwapStations}
                     title="Swap Stations"
                     style={{
-                      width: '34px',
-                      height: '34px',
+                      width: '36px',
+                      height: '36px',
                       borderRadius: '50%',
                       backgroundColor: '#e6f0ff',
                       display: 'flex',
@@ -470,13 +468,13 @@ const BookTicket = () => {
                       border: '1px solid #bae0ff'
                     }}
                   >
-                    <SwapOutlined style={{ fontSize: '13px' }} />
+                    <SwapOutlined style={{ fontSize: '14px' }} />
                   </div>
                 </Col>
 
                 {/* To Station */}
                 <Col xs={24} sm={10} md={5} lg={5}>
-                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>To</div>
+                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '6px', fontWeight: '600' }}>To</div>
                   <AutoComplete
                     value={toCode}
                     onChange={(v) => setToCode(v.toUpperCase())}
@@ -484,24 +482,23 @@ const BookTicket = () => {
                     placeholder="Destination Station (e.g. NDLS, Delhi)"
                     style={{ width: '100%', height: '42px' }}
                   />
-                  <Text style={{ fontSize: '0.68rem', color: '#8c8c8c', marginLeft: '4px', display: 'block', marginTop: '4px', whiteSpace: 'nowrap' }}>{toCity}</Text>
+                  <Text style={{ fontSize: '0.72rem', color: '#1890ff', marginLeft: '2px', display: 'block', marginTop: '4px', fontWeight: '600', whiteSpace: 'nowrap' }}>{toCity}</Text>
                 </Col>
 
                 {/* Date of Journey */}
                 <Col xs={24} sm={12} md={6} lg={6}>
-                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>Date of Journey</div>
+                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '6px', fontWeight: '600' }}>Date of Journey</div>
                   <DatePicker 
                     value={journeyDate}
                     onChange={(d) => setJourneyDate(d)}
                     format="DD MMM YYYY"
                     style={{ width: '100%', borderRadius: '8px', height: '42px', fontWeight: '600', backgroundColor: '#f8fafc' }}
                   />
-                  <div style={{ height: '16px', marginTop: '4px' }} />
                 </Col>
 
                 {/* Class */}
                 <Col xs={24} sm={12} md={6} lg={6}>
-                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '4px', fontWeight: '600' }}>Class</div>
+                  <div style={{ fontSize: '0.75rem', color: '#8c8c8c', marginBottom: '6px', fontWeight: '600' }}>Class</div>
                   <Select 
                     value={selectedClassFilter}
                     onChange={(v) => setSelectedClassFilter(v)}
@@ -513,12 +510,11 @@ const BookTicket = () => {
                       { value: '2A', label: 'AC 2 Tier (2A)' }
                     ]}
                   />
-                  <div style={{ height: '16px', marginTop: '4px' }} />
                 </Col>
               </Row>
 
               {/* Bottom Action Row: Search Trains Button on Right */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                 <Button 
                   type="primary"
                   onClick={() => message.success(`Found ${displayedTrains.length} available trains for ${fromCity} to ${toCity}`)}
@@ -543,10 +539,10 @@ const BookTicket = () => {
           </div>
 
           {/* TRAIN RESULTS SECTION HEADER */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', marginTop: '10px', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', padding: '0 4px', gap: '16px' }}>
             <div style={{ flex: 1 }}>
-              <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#00234b', fontSize: '1.1rem', lineHeight: 1.3 }}>
-                Trains from {fromCity} ({fromCode}) to {toCity} ({toCode}) - {journeyDate ? journeyDate.format('DD MMM YYYY') : '20 Sep 2025'}
+              <Title level={4} style={{ margin: 0, fontWeight: '800', color: '#00234b', fontSize: '1.15rem', lineHeight: 1.3 }}>
+                Trains from {fromCity} to {toCity} - {journeyDate ? journeyDate.format('DD MMM YYYY') : '20 Sep 2025'}
               </Title>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
