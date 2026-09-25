@@ -15,7 +15,7 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
-import { Typography, Badge, Button, Tag, Avatar, message } from 'antd';
+import { Typography, Badge, Button, Tag, Avatar, message, ConfigProvider, theme } from 'antd';
 import useAuthStore from '../store/useAuthStore';
 
 const { Text, Title } = Typography;
@@ -42,7 +42,22 @@ const AdminLayout = ({ children }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: '#7c3aed',
+          colorBgContainer: '#1e293b',
+          colorBgElevated: '#1e293b',
+          colorBgLayout: '#0f172a',
+          colorText: '#f8fafc',
+          colorTextHeading: '#ffffff',
+          colorBorder: '#334155',
+          colorBorderSecondary: '#334155'
+        }
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc' }}>
       
       {/* DISTINCT ADMIN TOP HEADER BAR */}
       <header style={{
@@ -220,6 +235,7 @@ const AdminLayout = ({ children }) => {
       </div>
 
     </div>
+    </ConfigProvider>
   );
 };
 

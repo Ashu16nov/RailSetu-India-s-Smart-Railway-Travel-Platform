@@ -1,7 +1,83 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const INITIAL_BOOKINGS = JSON.parse(localStorage.getItem('railsetu_bookings')) || [];
+const DEFAULT_SEED_BOOKINGS = [
+  {
+    _id: 'bk_101',
+    pnr: '2457812365',
+    passengerName: 'Ashu',
+    mobileNumber: '+91 9876543210',
+    trainName: 'Sampoorna Kranti Express',
+    trainNumber: '12393',
+    source: 'Patna Junction (PNBE)',
+    destination: 'New Delhi (NDLS)',
+    journeyDate: '2026-09-28',
+    journeyTime: '19:25',
+    className: '3AC',
+    coach: 'B2',
+    berth: 24,
+    status: 'CONFIRMED',
+    totalFare: 1450,
+    createdAt: '2026-09-24T12:00:00.000Z'
+  },
+  {
+    _id: 'bk_102',
+    pnr: '8492019384',
+    passengerName: 'Rohan Sharma',
+    mobileNumber: '+91 9123456789',
+    trainName: 'Vande Bharat Express',
+    trainNumber: '22345',
+    source: 'Patna Junction (PNBE)',
+    destination: 'Howrah Junction (HWH)',
+    journeyDate: '2026-09-29',
+    journeyTime: '05:30',
+    className: 'CC',
+    coach: 'C1',
+    berth: 12,
+    status: 'CONFIRMED',
+    totalFare: 1680,
+    createdAt: '2026-09-24T14:30:00.000Z'
+  },
+  {
+    _id: 'bk_103',
+    pnr: '4920193847',
+    passengerName: 'Priya Verma',
+    mobileNumber: '+91 9811223344',
+    trainName: 'Rajdhani Express',
+    trainNumber: '12951',
+    source: 'New Delhi (NDLS)',
+    destination: 'Mumbai Central (MMCT)',
+    journeyDate: '2026-09-30',
+    journeyTime: '16:55',
+    className: '2AC',
+    coach: 'A1',
+    berth: 18,
+    status: 'RAC',
+    totalFare: 2950,
+    createdAt: '2026-09-25T09:15:00.000Z'
+  },
+  {
+    _id: 'bk_104',
+    pnr: '7493029481',
+    passengerName: 'Vikram Singh',
+    mobileNumber: '+91 9765432100',
+    trainName: 'Varanasi Vande Bharat',
+    trainNumber: '22436',
+    source: 'New Delhi (NDLS)',
+    destination: 'Varanasi Junction (BSB)',
+    journeyDate: '2026-10-01',
+    journeyTime: '06:00',
+    className: 'EC',
+    coach: 'E1',
+    berth: 8,
+    status: 'CONFIRMED',
+    totalFare: 2400,
+    createdAt: '2026-09-25T11:00:00.000Z'
+  }
+];
+
+const stored = JSON.parse(localStorage.getItem('railsetu_bookings'));
+const INITIAL_BOOKINGS = (stored && stored.length > 0) ? stored : DEFAULT_SEED_BOOKINGS;
 
 const useBookingStore = create((set, get) => ({
   bookings: INITIAL_BOOKINGS,

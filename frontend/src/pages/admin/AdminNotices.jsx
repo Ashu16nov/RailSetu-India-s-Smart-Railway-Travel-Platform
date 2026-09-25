@@ -183,11 +183,11 @@ const AdminNotices = () => {
         bodyStyle={{ padding: '0' }}
       >
         <Table 
+          className="admin-dark-table"
           columns={columns}
           dataSource={filteredNotices}
           rowKey="id"
           pagination={{ pageSize: 6 }}
-          style={{ backgroundColor: 'transparent' }}
         />
       </Card>
 

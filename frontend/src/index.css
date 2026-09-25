@@ -109,3 +109,90 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ==========================================================================
+   ADMIN DARK THEME TABLE STYLES (Fixes text visibility for Train Name,
+   Passenger Name, PNR, and all table cell content)
+   ========================================================================== */
+
+.admin-dark-table,
+.admin-dark-table.ant-table-wrapper,
+.admin-dark-table .ant-table-wrapper,
+.admin-dark-table .ant-spin-nested-loading,
+.admin-dark-table .ant-spin-container,
+.admin-dark-table .ant-table,
+.admin-dark-table .ant-table-container,
+.admin-dark-table .ant-table-content,
+.admin-dark-table table {
+  background-color: #1e293b !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.admin-dark-table .ant-table-cell,
+.admin-dark-table th.ant-table-cell,
+.admin-dark-table td.ant-table-cell {
+  background-color: #1e293b !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+  padding: 14px 16px !important;
+}
+
+.admin-dark-table th.ant-table-cell,
+.admin-dark-table .ant-table-thead > tr > th {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #c084fc !important;
+  border-bottom: 1px solid #334155 !important;
+  font-weight: 800 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.admin-dark-table .ant-table-tbody > tr.ant-table-row:hover > td.ant-table-cell,
+.admin-dark-table .ant-table-tbody > tr:hover > td {
+  background-color: #334155 !important;
+  background: #334155 !important;
+}
+
+.admin-dark-table .ant-pagination {
+  margin: 16px 20px !important;
+  background-color: #1e293b !important;
+}
+
+.admin-dark-table .ant-pagination-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  border-radius: 6px !important;
+}
+
+.admin-dark-table .ant-pagination-item a {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+.admin-dark-table .ant-pagination-item-active {
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+}
+
+.admin-dark-table .ant-pagination-item-active a {
+  color: #ffffff !important;
+}
+
+.admin-dark-table .ant-pagination-prev .ant-pagination-item-link,
+.admin-dark-table .ant-pagination-next .ant-pagination-item-link {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+  border-radius: 6px !important;
+}
+
+.admin-dark-table .ant-empty-description {
+  color: #94a3b8 !important;
+}
+
+
+

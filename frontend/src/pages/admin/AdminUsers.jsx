@@ -67,16 +67,16 @@ const AdminUsers = () => {
       key: 'name',
       render: (record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Avatar style={{ backgroundColor: record.role === 'Admin' ? '#7c3aed' : '#2563eb', color: '#fff', fontWeight: '800' }}>
-            {record.name.charAt(0).toUpperCase()}
+          <Avatar style={{ backgroundColor: record.role === 'Admin' ? '#7c3aed' : '#2563eb', color: '#fff', fontWeight: '800', fontSize: '1rem' }}>
+            {(record.name || 'P').charAt(0).toUpperCase()}
           </Avatar>
           <div>
-            <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: '0.95rem', display: 'block' }}>
-              {record.name}
-            </Text>
-            <Text style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
+            <div style={{ color: '#ffffff', fontWeight: '800', fontSize: '1rem', lineHeight: '1.2' }}>
+              {record.name || 'Passenger User'}
+            </div>
+            <div style={{ color: '#c084fc', fontSize: '0.8rem', fontWeight: '600', marginTop: '2px' }}>
               {record.email}
-            </Text>
+            </div>
           </div>
         </div>
       )
@@ -87,7 +87,7 @@ const AdminUsers = () => {
       key: 'role',
       render: (role) => (
         <Tag color={role === 'Admin' ? 'purple' : 'blue'} style={{ fontWeight: '800', border: 'none' }}>
-          {role.toUpperCase()}
+          {role ? role.toUpperCase() : 'USER'}
         </Tag>
       )
     },
@@ -96,8 +96,8 @@ const AdminUsers = () => {
       key: 'contact',
       render: (record) => (
         <div>
-          <Text style={{ color: '#f8fafc', fontWeight: '700', fontSize: '0.85rem' }}>{record.city}</Text>
-          <Text style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>{record.phone}</Text>
+          <div style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '0.88rem' }}>{record.city}</div>
+          <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: '2px' }}>{record.phone}</div>
         </div>
       )
     },
@@ -201,11 +201,11 @@ const AdminUsers = () => {
         bodyStyle={{ padding: '0' }}
       >
         <Table 
+          className="admin-dark-table"
           columns={columns}
           dataSource={filteredUsers}
           rowKey="id"
           pagination={{ pageSize: 8 }}
-          style={{ backgroundColor: 'transparent' }}
         />
       </Card>
 

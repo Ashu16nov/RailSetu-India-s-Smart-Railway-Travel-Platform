@@ -65,7 +65,7 @@ const AdminBookings = () => {
       dataIndex: 'pnr',
       key: 'pnr',
       render: (text) => (
-        <Text style={{ color: '#fbbf24', fontWeight: '900', fontSize: '0.95rem' }}>{text}</Text>
+        <div style={{ color: '#fbbf24', fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{text}</div>
       )
     },
     {
@@ -73,12 +73,12 @@ const AdminBookings = () => {
       key: 'passenger',
       render: (record) => (
         <div>
-          <Text style={{ color: '#ffffff', fontWeight: '800', display: 'block' }}>
-            {record.passengerName || 'Ashu'}
-          </Text>
-          <Text style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>
-            Mob: {record.mobileNumber || '+91 9876543210'}
-          </Text>
+          <div style={{ color: '#ffffff', fontWeight: '800', fontSize: '1rem', lineHeight: '1.2' }}>
+            {record.passengerName || record.passenger?.name || 'Ashu'}
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: '2px' }}>
+            Mob: {record.mobileNumber || record.passenger?.mobile || '+91 9876543210'}
+          </div>
         </div>
       )
     },
@@ -87,12 +87,12 @@ const AdminBookings = () => {
       key: 'train',
       render: (record) => (
         <div>
-          <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: '0.88rem', display: 'block' }}>
-            {record.trainName} (#{record.trainNumber})
-          </Text>
-          <Text style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>
+          <div style={{ color: '#c084fc', fontWeight: '800', fontSize: '0.95rem', lineHeight: '1.2' }}>
+            {record.trainName || 'Express Train'} (#{record.trainNumber || '12393'})
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: '2px' }}>
             {record.source} &rarr; {record.destination} &bull; {record.journeyDate}
-          </Text>
+          </div>
         </div>
       )
     },
@@ -207,11 +207,11 @@ const AdminBookings = () => {
         bodyStyle={{ padding: '0' }}
       >
         <Table 
+          className="admin-dark-table"
           columns={columns}
           dataSource={filteredBookings}
           rowKey={(record, index) => record._id || record.id || record.pnr || index}
           pagination={{ pageSize: 8 }}
-          style={{ backgroundColor: 'transparent' }}
         />
       </Card>
 

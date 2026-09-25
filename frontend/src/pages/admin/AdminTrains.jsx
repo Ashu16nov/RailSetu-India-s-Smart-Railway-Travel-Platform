@@ -57,13 +57,17 @@ const AdminTrains = () => {
       dataIndex: 'trainName',
       key: 'trainName',
       render: (text, record) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ backgroundColor: 'rgba(124, 58, 237, 0.2)', padding: '8px', borderRadius: '8px', color: '#c084fc' }}>
-            <Train size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ backgroundColor: 'rgba(124, 58, 237, 0.25)', padding: '10px', borderRadius: '10px', color: '#c084fc' }}>
+            <Train size={20} />
           </div>
           <div>
-            <Text style={{ color: '#ffffff', fontWeight: '800', display: 'block', fontSize: '0.95rem' }}>{text}</Text>
-            <Tag color="blue" style={{ border: 'none', fontWeight: '700', fontSize: '0.72rem' }}>#{record.trainNumber}</Tag>
+            <div style={{ color: '#ffffff', fontWeight: '800', fontSize: '1rem', lineHeight: '1.2' }}>
+              {text || record.trainName || 'Express Train'}
+            </div>
+            <Tag color="purple" style={{ border: 'none', fontWeight: '800', fontSize: '0.72rem', marginTop: '4px' }}>
+              #{record.trainNumber}
+            </Tag>
           </div>
         </div>
       )
@@ -73,12 +77,12 @@ const AdminTrains = () => {
       key: 'route',
       render: (record) => (
         <div>
-          <Text style={{ color: '#f8fafc', fontWeight: '700', fontSize: '0.85rem' }}>
-            {record.departureCity} ({record.departureStation}) &rarr; {record.arrivalCity} ({record.arrivalStation})
-          </Text>
-          <Text style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>
+          <div style={{ color: '#f1f5f9', fontWeight: '700', fontSize: '0.88rem' }}>
+            {record.departureCity || record.departureStation} ({record.departureStation}) &rarr; {record.arrivalCity || record.arrivalStation} ({record.arrivalStation})
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '3px' }}>
             Dep: {record.departureTime} | Arr: {record.arrivalTime} ({record.duration})
-          </Text>
+          </div>
         </div>
       )
     },
@@ -180,11 +184,11 @@ const AdminTrains = () => {
         bodyStyle={{ padding: '0' }}
       >
         <Table 
+          className="admin-dark-table"
           columns={columns}
           dataSource={filteredTrains}
           rowKey="id"
           pagination={{ pageSize: 8 }}
-          style={{ backgroundColor: 'transparent' }}
         />
       </Card>
 
