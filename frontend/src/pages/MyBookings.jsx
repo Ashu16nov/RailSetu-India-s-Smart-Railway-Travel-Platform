@@ -25,7 +25,8 @@ import {
   Copy, 
   ArrowRight,
   ShieldCheck,
-  Printer
+  Printer,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useBookingStore from '../store/useBookingStore';
