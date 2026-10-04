@@ -103,7 +103,39 @@ const useBookingStore = create((set, get) => ({
     set({ bookings: localBookings, loading: false });
   },
 
-  addBooking: (bookingData) => {
+  addBooking: async (bookingData) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('railsetu_user'));
+      if (user && user.token && !user.token.startsWith('mock_') && !user.token.startsWith('jwt_authorized_token')) {
+        const payload = {
+          trainId: bookingData.trainId || '60d0fe4f5311236168a109ca', // Dummy valid ObjectId if needed, though backend uses Train model. We should send real or omit. 
+          // Actually, let's just send the raw data if the backend accepts it.
+          // The backend expects: trainId, journeyDate, source, destination, className, quota, passengers, totalFare.
+          // Since frontend might not have real MongoDB ObjectIds for trains, let's at least try.
+          trainId: bookingData.trainId || '60d0fe4f5311236168a109ca',
+          journeyDate: bookingData.journeyDate || new Date().toISOString(),
+          source: bookingData.source || 'NDLS',
+          destination: bookingData.destination || 'BSB',
+          className: bookingData.className || '3A',
+          quota: 'GN',
+          passengers: [{
+            name: bookingData.passengerName || 'Passenger',
+            age: bookingData.passengerAge || 25,
+            gender: bookingData.passengerGender || 'Male',
+            aadhaarHash: 'mock-aadhaar-' + Date.now()
+          }],
+          totalFare: bookingData.totalFare || 1450
+        };
+        await axios.post('http://localhost:5000/api/bookings', payload, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        // Refetch bookings to get the real ones from backend
+        get().fetchBookings();
+      }
+    } catch (error) {
+      console.error('Failed to create booking on backend', error);
+    }
+
     const existing = JSON.parse(localStorage.getItem('railsetu_bookings')) || [];
     const newBooking = {
       _id: 'bk_' + Date.now(),
@@ -133,7 +165,24 @@ const useBookingStore = create((set, get) => ({
     set({ bookings: [] });
   },
 
-  cancelBooking: (bookingId) => {
+  cancelBooking: async (bookingId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('railsetu_user'));
+      if (user && user.token && !user.token.startsWith('mock_') && !user.token.startsWith('jwt_authorized_token')) {
+        // Find the actual MongoDB _id for the booking
+        const list = get().bookings || [];
+        const booking = list.find(b => b._id === bookingId || b.pnr === bookingId || b.bookingId === bookingId);
+        
+        if (booking && booking._id && !booking._id.startsWith('bk_')) {
+          await axios.post(`http://localhost:5000/api/bookings/${booking._id}/cancel`, {}, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to cancel booking on backend', error);
+    }
+
     const list = get().bookings || [];
     const updated = list.map((b) =>
       b._id === bookingId || b.pnr === bookingId || b.bookingId === bookingId

@@ -118,8 +118,10 @@ const MyBookings = () => {
   }, [fetchBookings]);
 
   useEffect(() => {
-    // Combine dynamic store bookings with mock fallback bookings
-    const formattedStoreBookings = storeBookings.map((b) => ({
+    // Combine dynamic store bookings with mock fallback bookings safely
+    const validStoreBookings = Array.isArray(storeBookings) ? storeBookings : [];
+    
+    const formattedStoreBookings = validStoreBookings.map((b) => ({
       _id: b._id,
       bookingId: b.bookingId || `RS${Date.now().toString().slice(-6)}`,
       pnr: b.pnr || Math.floor(1000000000 + Math.random() * 9000000000).toString(),
