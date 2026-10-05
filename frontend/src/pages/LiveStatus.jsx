@@ -618,6 +618,7 @@ const LiveStatus = () => {
                   );
                 })}
               </div>
+            </Card>
           ) : activeSubTab === 'map' ? (
             <Card style={{ borderRadius: '20px', padding: '0', overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
               <div style={{ height: '450px', width: '100%' }}>
