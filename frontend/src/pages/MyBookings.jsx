@@ -29,6 +29,8 @@ import {
   Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
 import useBookingStore from '../store/useBookingStore';
 
 const { Title, Text } = Typography;
@@ -161,11 +163,60 @@ const MyBookings = () => {
     setTicketModalVisible(true);
   };
 
-  const handleDownloadTicket = (booking) => {
+  const handleDownloadTicket = async (booking) => {
     message.loading({ content: 'Generating e-Ticket PDF...', key: 'dl' });
-    setTimeout(() => {
+    try {
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFillColor(13, 71, 161); // #0d47a1
+      doc.rect(0, 0, 210, 35, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RailSetu', 15, 22);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Smart Digital Railway Ticket', 140, 22);
+      
+      // PNR & Details
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`PNR: ${booking.pnr}`, 15, 50);
+      
+      doc.setFontSize(11);
+      doc.text(`Train: ${booking.trainName} (${booking.trainNumber})`, 15, 60);
+      doc.text(`Class: ${booking.className}`, 140, 60);
+      
+      // Route
+      doc.setFillColor(245, 245, 245);
+      doc.rect(15, 70, 180, 25, 'F');
+      doc.text(`${booking.departureTime} | ${booking.source}`, 20, 80);
+      doc.text(`=> ${booking.duration} =>`, 95, 80);
+      doc.text(`${booking.arrivalTime} | ${booking.destination}`, 135, 80);
+      doc.text(`Journey Date: ${booking.journeyDate}`, 20, 90);
+      
+      // Passenger Details
+      doc.text('Passenger Information:', 15, 110);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Status: ${booking.status} | Coach: ${booking.coach} | Berth: ${booking.berth}`, 15, 120);
+      doc.text(`Fare: Rs. ${booking.totalFare}`, 15, 130);
+      doc.text(`Passengers: ${booking.passengersCount}`, 15, 140);
+      
+      // Generate actual QR Code Base64
+      const qrData = JSON.stringify({ pnr: booking.pnr, status: booking.status, name: booking.trainName });
+      const qrImage = await QRCode.toDataURL(qrData);
+      doc.addImage(qrImage, 'PNG', 140, 110, 40, 40);
+      doc.setFontSize(8);
+      doc.text('Scan for Validity', 147, 153);
+
+      doc.save(`RailSetu_Ticket_${booking.pnr}.pdf`);
       message.success({ content: `Ticket downloaded for PNR ${booking.pnr}`, key: 'dl' });
-    }, 1200);
+    } catch (err) {
+      console.error(err);
+      message.error({ content: 'Failed to generate PDF', key: 'dl' });
+    }
   };
 
   const handleCancelBooking = (bookingId) => {
