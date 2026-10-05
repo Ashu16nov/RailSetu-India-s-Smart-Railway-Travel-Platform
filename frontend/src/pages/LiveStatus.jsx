@@ -28,6 +28,17 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import useBookingStore from '../store/useBookingStore';
+import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix leaflet default icon issue in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const { Title, Text } = Typography;
 
@@ -46,11 +57,11 @@ const MOCK_TRAIN_DATA = {
     duration: '8h 15m',
     distance: '709 km',
     schedule: [
-      { station: 'New Delhi (NDLS)', isSource: true, arrDep: '21:15', actual: '21:20', delay: '+5m', delayColor: 'orange', status: 'Departed', statusColor: 'green' },
-      { station: 'Kanpur Central (CNB)', arrDep: '01:50 / 01:55', actual: '01:52 / 01:58', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green' },
-      { station: 'Prayagraj Jn (PRYJ)', arrDep: '03:45 / 03:50', actual: '03:47 / 03:52', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green' },
-      { station: 'Mughalsarai Jn (MGS)', arrDep: '04:55 / 05:00', actual: '04:58 / 05:02', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green' },
-      { station: 'Varanasi Jn (BSB)', isDest: true, arrDep: '05:30', actual: '-', delay: '-', status: 'On Time', statusColor: 'green' }
+      { station: 'New Delhi (NDLS)', isSource: true, arrDep: '21:15', actual: '21:20', delay: '+5m', delayColor: 'orange', status: 'Departed', statusColor: 'green', coords: [28.6429, 77.2191] },
+      { station: 'Kanpur Central (CNB)', arrDep: '01:50 / 01:55', actual: '01:52 / 01:58', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green', coords: [26.4499, 80.3319] },
+      { station: 'Prayagraj Jn (PRYJ)', arrDep: '03:45 / 03:50', actual: '03:47 / 03:52', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green', coords: [25.4358, 81.8463] },
+      { station: 'Mughalsarai Jn (MGS)', arrDep: '04:55 / 05:00', actual: '04:58 / 05:02', delay: '+2m', delayColor: 'orange', status: 'On Time', statusColor: 'green', coords: [25.2758, 83.1189] },
+      { station: 'Varanasi Jn (BSB)', isDest: true, arrDep: '05:30', actual: '-', delay: '-', status: 'On Time', statusColor: 'green', coords: [25.3176, 82.9739] }
     ],
     coaches: ['ENG', 'SLR', 'GS', 'GS', 'B1', 'B2', 'B3', 'A1', 'H1', 'S1', 'S2', 'S3', 'SLR'],
     details: {
@@ -73,11 +84,11 @@ const MOCK_TRAIN_DATA = {
     duration: '15h 40m',
     distance: '1384 km',
     schedule: [
-      { station: 'New Delhi (NDLS)', isSource: true, arrDep: '16:55', actual: '16:55', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green' },
-      { station: 'Kota Jn (KOTA)', arrDep: '21:40 / 21:50', actual: '21:40 / 21:50', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green' },
-      { station: 'Ratlam Jn (RTM)', arrDep: '01:13 / 01:15', actual: '01:15 / 01:18', delay: '+2m', delayColor: 'orange', status: 'Departed', statusColor: 'green' },
-      { station: 'Vadodara Jn (BRC)', arrDep: '04:20 / 04:30', actual: '04:20 / 04:30', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green' },
-      { station: 'Mumbai Central (MMCT)', isDest: true, arrDep: '08:35', actual: '08:35', delay: '0m', delayColor: 'green', status: 'On Time', statusColor: 'green' }
+      { station: 'New Delhi (NDLS)', isSource: true, arrDep: '16:55', actual: '16:55', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green', coords: [28.6429, 77.2191] },
+      { station: 'Kota Jn (KOTA)', arrDep: '21:40 / 21:50', actual: '21:40 / 21:50', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green', coords: [25.1746, 75.8398] },
+      { station: 'Ratlam Jn (RTM)', arrDep: '01:13 / 01:15', actual: '01:15 / 01:18', delay: '+2m', delayColor: 'orange', status: 'Departed', statusColor: 'green', coords: [23.3315, 75.0367] },
+      { station: 'Vadodara Jn (BRC)', arrDep: '04:20 / 04:30', actual: '04:20 / 04:30', delay: '0m', delayColor: 'green', status: 'Departed', statusColor: 'green', coords: [22.3072, 73.1812] },
+      { station: 'Mumbai Central (MMCT)', isDest: true, arrDep: '08:35', actual: '08:35', delay: '0m', delayColor: 'green', status: 'On Time', statusColor: 'green', coords: [18.9712, 72.8197] }
     ],
     coaches: ['ENG', 'H1', 'A1', 'A2', 'B1', 'B2', 'B3', 'B4', 'PC', 'B5', 'EOG'],
     details: {
@@ -100,10 +111,10 @@ const MOCK_TRAIN_DATA = {
     duration: '4h 25m',
     distance: '359 km',
     schedule: [
-      { station: 'Chennai Central (MAS)', isSource: true, arrDep: '05:50', actual: '06:00', delay: '+10m', delayColor: 'red', status: 'Departed', statusColor: 'green' },
-      { station: 'Katpadi Jn (KPD)', arrDep: '07:13 / 07:15', actual: '07:23 / 07:25', delay: '+10m', delayColor: 'red', status: 'Departed', statusColor: 'green' },
-      { station: 'Krishnarajapuram (KJM)', arrDep: '09:38 / 09:40', actual: '09:48 / 09:50', delay: '+10m', delayColor: 'red', status: 'On Time', statusColor: 'green' },
-      { station: 'KSR Bengaluru (SBC)', isDest: true, arrDep: '10:15', actual: '10:25', delay: '+10m', delayColor: 'red', status: 'Upcoming', statusColor: 'blue' }
+      { station: 'Chennai Central (MAS)', isSource: true, arrDep: '05:50', actual: '06:00', delay: '+10m', delayColor: 'red', status: 'Departed', statusColor: 'green', coords: [13.0827, 80.2707] },
+      { station: 'Katpadi Jn (KPD)', arrDep: '07:13 / 07:15', actual: '07:23 / 07:25', delay: '+10m', delayColor: 'red', status: 'Departed', statusColor: 'green', coords: [12.9793, 79.1378] },
+      { station: 'Krishnarajapuram (KJM)', arrDep: '09:38 / 09:40', actual: '09:48 / 09:50', delay: '+10m', delayColor: 'red', status: 'On Time', statusColor: 'green', coords: [13.0039, 77.6744] },
+      { station: 'KSR Bengaluru (SBC)', isDest: true, arrDep: '10:15', actual: '10:25', delay: '+10m', delayColor: 'red', status: 'Upcoming', statusColor: 'blue', coords: [12.9779, 77.5668] }
     ],
     coaches: ['D1', 'C1', 'C2', 'C3', 'C4', 'E1', 'C5', 'D2'],
     details: {
@@ -479,6 +490,7 @@ const LiveStatus = () => {
             {[
               { key: 'live', label: 'Live Running Status' },
               { key: 'schedule', label: 'Schedule' },
+              { key: 'map', label: 'Interactive Map' },
               { key: 'details', label: 'Train Details' },
               { key: 'coach', label: 'Coach Position' }
             ].map((tab) => (
@@ -605,6 +617,34 @@ const LiveStatus = () => {
                     </div>
                   );
                 })}
+              </div>
+          ) : activeSubTab === 'map' ? (
+            <Card style={{ borderRadius: '20px', padding: '0', overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
+              <div style={{ height: '450px', width: '100%' }}>
+                <MapContainer 
+                  center={currentTrain.schedule[0].coords || [20.5937, 78.9629]} 
+                  zoom={5} 
+                  style={{ height: '100%', width: '100%', borderRadius: '20px' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {currentTrain.schedule.filter(s => s.coords).map((s, idx) => (
+                    <Marker key={idx} position={s.coords}>
+                      <Popup>
+                        <strong style={{ fontSize: '14px' }}>{s.station}</strong><br/>
+                        <span style={{ color: '#64748b' }}>Time: {s.arrDep}</span><br/>
+                        <span style={{ color: s.statusColor || 'green' }}>{s.status} ({s.delay})</span>
+                      </Popup>
+                    </Marker>
+                  ))}
+                  <Polyline 
+                    positions={currentTrain.schedule.filter(s => s.coords).map(s => s.coords)} 
+                    color="#1890ff" 
+                    weight={4}
+                  />
+                </MapContainer>
               </div>
             </Card>
           ) : activeSubTab === 'coach' ? (
