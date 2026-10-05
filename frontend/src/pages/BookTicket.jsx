@@ -321,6 +321,10 @@ const BookTicket = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [latestBooking, setLatestBooking] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Seat Selector State
+  const [isSeatSelectorOpen, setIsSeatSelectorOpen] = useState(false);
+  const [selectedSeatNode, setSelectedSeatNode] = useState('34 (LB)');
 
   const handleSelectTrain = (train, cls) => {
     setSelectedTrainId(train.id);
@@ -359,10 +363,16 @@ const BookTicket = () => {
       return;
     }
 
+    // Instead of booking instantly, open Interactive Seat Selector
+    setIsSeatSelectorOpen(true);
+  };
+
+  const handleConfirmSeatAndBook = () => {
+    setIsSeatSelectorOpen(false);
     setIsSubmitting(true);
 
     setTimeout(() => {
-      const classNameFull = selectedClass === 'SL' ? 'Sleeper (SL)' : selectedClass === '3A' ? 'AC 3 Tier (3A)' : 'AC 2 Tier (2A)';
+      const classNameFull = selectedClass === 'SL' ? 'Sleeper (SL)' : selectedClass === '3A' ? 'AC 3 Tier (3A)' : selectedClass === '2A' ? 'AC 2 Tier (2A)' : selectedClass;
       const bookingData = {
         trainName: selectedTrain.trainName,
         trainNumber: selectedTrain.trainNumber,
@@ -375,7 +385,9 @@ const BookTicket = () => {
         passengerName,
         passengerAge,
         passengerGender,
-        mobileNumber
+        mobileNumber,
+        coach: 'B4',
+        berth: selectedSeatNode
       };
 
       const newBooking = addBooking(bookingData);
@@ -1095,7 +1107,114 @@ const BookTicket = () => {
 
       </Row>
 
+      {/* INTERACTIVE SEAT SELECTOR MODAL */}
+      <Modal
+        open={isSeatSelectorOpen}
+        title={<Title level={4} style={{ margin: 0, color: '#00234b' }}>Select Your Seat - Coach B4</Title>}
+        onCancel={() => setIsSeatSelectorOpen(false)}
+        footer={[
+          <Button key="back" onClick={() => setIsSeatSelectorOpen(false)}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" loading={isSubmitting} onClick={handleConfirmSeatAndBook}>
+            Confirm Seat & Book Ticket
+          </Button>,
+        ]}
+        width={400}
+        centered
+        style={{ borderRadius: '16px' }}
+      >
+        <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '12px', marginBottom: '16px' }}>
+          <Text style={{ display: 'block', marginBottom: '12px', fontWeight: '600' }}>Choose a seat layout style:</Text>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: '4px' }}></div>
+              <Text style={{ fontSize: '0.8rem' }}>Available</Text>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#ffccc7', border: '1px solid #ff7875', borderRadius: '4px' }}></div>
+              <Text style={{ fontSize: '0.8rem' }}>Booked</Text>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#1890ff', border: '1px solid #096dd9', borderRadius: '4px' }}></div>
+              <Text style={{ fontSize: '0.8rem' }}>Selected</Text>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', padding: '10px 0', border: '2px solid #e8e8e8', borderRadius: '24px', backgroundColor: '#fafafa', maxHeight: '400px', overflowY: 'auto' }}>
+          {/* Mocking a Coach Seat Layout (rows of 3 vs 3) */}
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', width: '280px', marginBottom: '8px' }}>
+              {/* Left Side (Lower, Middle, Upper) */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { id: `${i * 6 + 1} (LB)`, label: 'LB', booked: false },
+                  { id: `${i * 6 + 2} (MB)`, label: 'MB', booked: i % 2 === 0 },
+                  { id: `${i * 6 + 3} (UB)`, label: 'UB', booked: false }
+                ].map((seat) => {
+                  const isSelected = selectedSeatNode === seat.id;
+                  return (
+                    <div
+                      key={seat.id}
+                      onClick={() => { if (!seat.booked) setSelectedSeatNode(seat.id) }}
+                      style={{
+                        width: '36px', height: '40px',
+                        backgroundColor: seat.booked ? '#ffccc7' : (isSelected ? '#1890ff' : '#e6f7ff'),
+                        border: `1px solid ${seat.booked ? '#ff7875' : (isSelected ? '#096dd9' : '#91d5ff')}`,
+                        borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: seat.booked ? 'not-allowed' : 'pointer',
+                        color: seat.booked ? '#d9363e' : (isSelected ? '#fff' : '#0050b3'),
+                        boxShadow: isSelected ? '0 2px 8px rgba(24,144,255,0.4)' : 'none',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800' }}>{seat.id.split(' ')[0]}</span>
+                      <span style={{ fontSize: '0.55rem' }}>{seat.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Aisle Spacer */}
+              <div style={{ width: '20px' }}></div>
+
+              {/* Right Side (Side Lower, Side Upper) */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ width: '36px' }}></div> {/* Empty space for side aisle */}
+                {[
+                  { id: `${i * 6 + 4} (SL)`, label: 'SL', booked: i % 3 === 0 },
+                  { id: `${i * 6 + 5} (SU)`, label: 'SU', booked: false }
+                ].map((seat) => {
+                  const isSelected = selectedSeatNode === seat.id;
+                  return (
+                    <div
+                      key={seat.id}
+                      onClick={() => { if (!seat.booked) setSelectedSeatNode(seat.id) }}
+                      style={{
+                        width: '36px', height: '40px',
+                        backgroundColor: seat.booked ? '#ffccc7' : (isSelected ? '#1890ff' : '#e6f7ff'),
+                        border: `1px solid ${seat.booked ? '#ff7875' : (isSelected ? '#096dd9' : '#91d5ff')}`,
+                        borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: seat.booked ? 'not-allowed' : 'pointer',
+                        color: seat.booked ? '#d9363e' : (isSelected ? '#fff' : '#0050b3'),
+                        boxShadow: isSelected ? '0 2px 8px rgba(24,144,255,0.4)' : 'none',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800' }}>{seat.id.split(' ')[0]}</span>
+                      <span style={{ fontSize: '0.55rem' }}>{seat.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
       {/* BOOKING CONFIRMATION SUCCESS MODAL */}
+
       <Modal
         open={isSuccessModalOpen}
         footer={null}
