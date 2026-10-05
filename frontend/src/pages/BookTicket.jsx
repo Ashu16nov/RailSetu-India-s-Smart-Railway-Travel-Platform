@@ -709,17 +709,24 @@ const BookTicket = () => {
                                     ₹ {price}
                                   </Text>
                                 </div>
-                                <div style={{ 
-                                  fontSize: '0.65rem', 
-                                  fontWeight: '700', 
-                                  marginTop: '4px',
-                                  padding: '2px 4px', 
-                                  borderRadius: '4px',
-                                  backgroundColor: avail.badgeBg || '#e6f4ea',
-                                  color: avail.badgeText || '#137333',
-                                  border: `1px solid ${avail.badgeText}33`
-                                }}>
-                                  {avail.text}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                  <div style={{ 
+                                    fontSize: '0.65rem', 
+                                    fontWeight: '700', 
+                                    padding: '2px 6px', 
+                                    borderRadius: '4px',
+                                    backgroundColor: avail.badgeBg || '#e6f4ea',
+                                    color: avail.badgeText || '#137333',
+                                    border: `1px solid ${avail.badgeText}33`,
+                                    width: '100%'
+                                  }}>
+                                    {avail.text}
+                                  </div>
+                                  {avail.probabilityText && (
+                                    <div style={{ fontSize: '0.6rem', fontWeight: '800', color: avail.probabilityColor }}>
+                                      {avail.probabilityText}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );

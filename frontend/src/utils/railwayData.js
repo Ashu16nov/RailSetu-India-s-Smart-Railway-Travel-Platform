@@ -299,7 +299,9 @@ export const calculateSeatAvailability = (trainNumber, className, dateStr) => {
       color: 'green',
       type: 'success',
       badgeBg: '#e6f4ea',
-      badgeText: '#137333'
+      badgeText: '#137333',
+      probabilityText: '100% Confirmed',
+      probabilityColor: '#137333'
     };
   } else if (statusType < 8) {
     const racNum = 1 + (positiveHash % 25);
@@ -310,10 +312,18 @@ export const calculateSeatAvailability = (trainNumber, className, dateStr) => {
       color: 'orange',
       type: 'warning',
       badgeBg: '#fff7e6',
-      badgeText: '#d46b08'
+      badgeText: '#d46b08',
+      probabilityText: '90% Chance',
+      probabilityColor: '#d46b08'
     };
   } else {
     const wlNum = 1 + (positiveHash % 45);
+    let prob = 15;
+    let pColor = '#cf1322'; // red
+    if (wlNum <= 10) { prob = 85; pColor = '#137333'; } // green
+    else if (wlNum <= 25) { prob = 55; pColor = '#d46b08'; } // orange
+    else if (wlNum <= 40) { prob = 30; pColor = '#d4380d'; } // dark orange
+    
     return {
       status: 'WL',
       count: wlNum,
@@ -321,7 +331,9 @@ export const calculateSeatAvailability = (trainNumber, className, dateStr) => {
       color: 'red',
       type: 'error',
       badgeBg: '#fff2e8',
-      badgeText: '#d4380d'
+      badgeText: '#d4380d',
+      probabilityText: `${prob}% Chance`,
+      probabilityColor: pColor
     };
   }
 };
